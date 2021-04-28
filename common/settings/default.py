@@ -1,0 +1,4 @@
+
+
+class DefaultConfig():
+    pass
