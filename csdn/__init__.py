@@ -2,6 +2,7 @@ from flask import Flask
 
 def _create_app(config,enable_config_file=False):
     '''
+    创建app对象
     :param config: 配置类
     :param enable_config_file:
     :return: 一个app对象
@@ -15,7 +16,12 @@ def _create_app(config,enable_config_file=False):
     return app
 
 def create_app(config,enable_config_file=False):
-
+    '''
+    配置信息
+    :param config: 配置类
+    :param enable_config_file: app对象
+    :return:
+    '''
     app = _create_app((config,enable_config_file))
 
     return app
