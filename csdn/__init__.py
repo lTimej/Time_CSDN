@@ -24,4 +24,8 @@ def create_app(config,enable_config_file=False):
     '''
     app = _create_app((config,enable_config_file))
 
+    #用户类注册
+    from .resources.users import user_bp
+    app.register_blueprint(user_bp)
+
     return app
