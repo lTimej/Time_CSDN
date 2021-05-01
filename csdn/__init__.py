@@ -13,6 +13,7 @@ def _create_app(config,enable_config_file=False):
         from utils import constants
         app.config.from_envvar(constants.GLOBAL_SETTING_ENV_NAME, silent=True)
 
+
     return app
 
 def create_app(config,enable_config_file=False):
@@ -22,7 +23,24 @@ def create_app(config,enable_config_file=False):
     :param enable_config_file: app对象
     :return:
     '''
-    app = _create_app((config,enable_config_file))
+    app = _create_app(config,enable_config_file)
+
+    # 配置日志
+    from utils.logging import create_logger
+    create_logger(app)
+
+    # MySQL数据库连接初始化
+    from models import db
+    db.init_app(app)
+
+    #redis哨兵
+    from redis.sentinel import Sentinel
+    _sentinel = Sentinel(app.config['REDIS_SENTINELS'])
+    app.redis_master = _sentinel.master_for(app.config['REDIS_SENTINEL_SERVICE_NAME'])
+    app.redis_slave = _sentinel.slave_for(app.config['REDIS_SENTINEL_SERVICE_NAME'])
+    #redis集群
+    from rediscluster import StrictRedisCluster
+    app.redis_cluster = StrictRedisCluster(startup_nodes=app.config['REDIS_CLUSTER'])
 
     #用户类注册
     from .resources.users import user_bp
