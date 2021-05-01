@@ -55,7 +55,6 @@ class Article(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user_basic.user_id'), doc='用户ID')
     channel_id = db.Column(db.Integer, db.ForeignKey('news_channel.channel_id'), doc='频道ID')
     title = db.Column(db.String, doc='标题')
-    cover = db.Column(db.JSON, doc='封面')
     is_advertising = db.Column(db.Boolean, default=False, doc='是否投放广告')
     ctime = db.Column('create_time', db.DateTime, default=datetime.now, doc='创建时间')
     status = db.Column(db.Integer, default=0, doc='帖文状态')

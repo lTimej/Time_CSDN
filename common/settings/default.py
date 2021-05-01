@@ -1,5 +1,4 @@
 
-
 class DefaultConfig():
     '''
     基础配置
@@ -43,4 +42,30 @@ class DefaultConfig():
         {'host': '127.0.0.1', 'port': '7001'},
         {'host': '127.0.0.1', 'port': '7002'},
     ]
+    # 限流服务redis
+    RATELIMIT_STORAGE_URL = 'redis+sentinel://127.0.0.1:26380,127.0.0.1:26381,127.0.0.1:26382/mymaster'
+    RATELIMIT_STRATEGY = 'moving-window'
+
+    RABBITMQ = 'amqp://time:liujun@localhost:5672/csdn'
+
+    # Snowflake ID Worker 参数
+    DATACENTER_ID = 0
+    WORKER_ID = 0
+    SEQUENCE = 0
+
+
+
+
+class CeleryConfig(object):
+    """
+    Celery默认配置
+    """
+    broker_url = 'amqp://time:liujun@localhost:5672/csdn'
+
+    # 容联云通讯短信验证码有效期，单位：秒
+    SMS_CODE_REDIS_EXPIRES = 300
+    # 短信模板
+    SEND_SMS_TEMPLATE_ID = 1
+
+
 

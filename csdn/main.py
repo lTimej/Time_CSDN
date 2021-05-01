@@ -8,8 +8,10 @@ from flask import jsonify
 
 from . import create_app
 from settings.default import DefaultConfig
+from flask_cors import CORS
 
 app = create_app(DefaultConfig, enable_config_file=True)
+CORS(app,supports_credentials=True)
 
 @app.route('/')
 def route_map():
