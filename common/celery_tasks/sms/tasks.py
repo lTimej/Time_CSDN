@@ -27,11 +27,12 @@ def send_sms_code(self,mobile,sms_code):
         raise self.retry(exc=e, max_retries=3)
     #{'statusCode': '000000', 'templateSMS': {'smsMessageSid': 'cc634baa6bbb493d90fc2a8e0ebd93f1', 'dateCreated': '20210501160131'}
     # #获取响应
-    resp_code = sms_response.get('statusCode')
-    if sms_response != '000000':#失败
-        message = sms_response.get('Message', '')
-        logger.error('send sms failed')
-        raise self.retry(exc=Exception(message), max_retries=3)
-    logger.info('[send_verification_code] {} {}'.format(mobile, sms_code))
+    # sms_response = json.loads(sms_response)
+    # resp_code = sms_response.get('statusCode')
+    # if sms_response != '000000':#失败
+    #     message = sms_response.get('Message', '')
+    #     logger.error('send sms failed')
+    #     raise self.retry(exc=Exception(message), max_retries=3)
+    # logger.info('[send_sms_code] {} {}'.format(mobile, sms_code))
     return sms_response
 

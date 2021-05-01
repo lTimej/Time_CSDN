@@ -49,7 +49,6 @@ class CCP(object):
         # 判断单例是否存在：_instance属性中存储的就是单例
         if not hasattr(cls, '_instance'):
             # 如果单例不存在，初始化单例
-            print(888888)
             cls._instance = super(CCP, cls).__new__(cls, *args, **kwargs)
 
             # 初始化REST SDK
@@ -58,7 +57,6 @@ class CCP(object):
             cls._instance.rest.setAppId(_appId)
 
         # 返回单例
-        print(999999)
         return cls._instance
 
     def send_template_sms(self, to, datas, tempId):
@@ -70,9 +68,9 @@ class CCP(object):
         :return: 成功：0 失败：-1
         """
         result = self.rest.sendTemplateSMS(to, datas, tempId)
-        print(result)
+        print(5555,result)
         if result.get('statusCode') == '000000':
-            return 0
+            return result
         else:
             return -1
 
