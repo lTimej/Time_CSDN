@@ -59,4 +59,8 @@ def create_app(config,enable_config_file=False):
     from utils.middleware import user_authenticate
     app.before_request(user_authenticate)
 
+    #fdfs
+    from fdfs_client.client import Fdfs_client
+    app.fdfs_client = Fdfs_client('utils/fdfs/client.conf')
+
     return app

@@ -107,7 +107,10 @@ class Auth(Resource):
             #生成id
             user_id = current_app.id_worker.get_id()
             try:#与用户信息共存
-                user = User(id=user_id,mobile=mobile,last_login=datetime.now(),name=get_username(mobile))
+                user = User(id=user_id,mobile=mobile,
+                            last_login=datetime.now(),
+                            name=get_username(mobile),
+                            profile_photo=current_app.config['DEFAULT_TX'])
                 db.session.add(user)
                 db.session.flush()
                 profile = UserProfile(id=user.id)

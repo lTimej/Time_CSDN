@@ -9,6 +9,9 @@ class DefaultConfig():
     JWT_EXPIRY_HOURS = 2
     JWT_REFRESH_DAYS = 14
 
+    #默认头像
+    DEFAULT_TX = 'group1/M00/00/00/wKiZgmCOpa6AbvCXAAEwN58xN6E181.png'
+
     ERROR_404_HELP = False
 
     # 日志
