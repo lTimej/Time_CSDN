@@ -55,5 +55,8 @@ def create_app(config,enable_config_file=False):
     app.id_worker = IdWorker(app.config['DATACENTER_ID'],
                              app.config['WORKER_ID'],
                              app.config['SEQUENCE'])
+    #请求钩子
+    from utils.middleware import user_authenticate
+    app.before_request(user_authenticate)
 
     return app

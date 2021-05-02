@@ -15,7 +15,7 @@ from utils.getJwt import generate_jwt
 from . import constants
 from utils import parsers
 from utils.limiter import limiter as lmt
-from redis.exceptions import RedisError
+from redis.exceptions import ConnectionError
 from celery.result import AsyncResult
 
 class GetSmsCode(Resource):
@@ -39,13 +39,17 @@ class GetSmsCode(Resource):
         '''
         #随机生成6位验证码
         sms_code = '{:0>6d}'.format(random.randint(0, 999999))
-
+        print(sms_code)
         #保存之redis
-        current_app.redis_master.setex("app:code:{}".format(mobile),constants.SMS_VERIFICATION_CODE_EXPIRES, sms_code)
-        #异步发送
-        res = send_sms_code.delay(mobile,sms_code)
+        try:
+            current_app.redis_master.setex("app:code:{}".format(mobile),constants.SMS_VERIFICATION_CODE_EXPIRES, sms_code)
+        except ConnectionError as e:
+            return {"message":"invalid"},400
 
-        return {"mobile":mobile}
+        #异步发送
+        # res = send_sms_code.delay(mobile,sms_code)
+
+        return {"message":"ok","code":sms_code},201
 
 class Auth(Resource):
     def _get_token(self,user_id,refresh=True):
@@ -83,19 +87,19 @@ class Auth(Resource):
         key = "app:code:{}".format(mobile)
         try:#先从主中获取
             real_sms_code = current_app.redis_master.get(key)
-            print(real_sms_code)
         except ConnectionError as e:#获取不到在从副上取
             current_app.logger.error(e)
             real_sms_code = current_app.redis_slave.get(key)
-            print(real_sms_code)
         #删除redis中验证码，用户点击登录后旧要重新获取验证码
         try:
             current_app.redis_master.delete(key)
         except ConnectionError as e:
             current_app.logger.error(e)
         #验证
-        if not real_sms_code or real_sms_code.decode() != sms_code:
-            return {"message":"sms_code is invalid"},400
+        if not real_sms_code :#验证码过期
+            return {"message":"sms_code is expired"},400
+        if real_sms_code.decode() != sms_code:#验证码输入错误
+            return {"message": "sms_code is error"}, 401
         #把数据库不存在的用户保存到数据库
         # 1、查询当前手机号用户对象
         user = User.query.filter_by(mobile=mobile).first()
@@ -112,9 +116,16 @@ class Auth(Resource):
             except Exception as e:
                 current_app.logger.error(e)
                 db.session.rollback()
+                return {"message":"data is abnormal"},405
         else:#存在，判断该用户是否可用
             if user.status == User.STATUS.DISABLE:
-                return {"message":"this user is not used"},403
+                return {"message":"this user is not exist"},403
         #响应之前构造token认证码
         token,refresh_token = self._get_token(user.id)
         return {"token":token,"refresh_token":refresh_token},201
+
+    def put(self):
+        '''
+        刷新token
+        :return:
+        '''
