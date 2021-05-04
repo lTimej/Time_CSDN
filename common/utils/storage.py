@@ -3,7 +3,7 @@ from flask import current_app
 
 def upload_photo(file_data):
     '''
-    上传头像
+    上传图片
     :param file_data: 文件名
     :return:
 

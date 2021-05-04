@@ -112,6 +112,15 @@ CREATE TABLE `user_search` (
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户搜索历史';
 
+CREATE TABLE `user_visitors` (
+  `visit_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键id',
+  `user_id` bigint(20) unsigned NOT NULL COMMENT '用户ID',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `count` bigint(20) unsigned NOT NULL DEFAULT 0 COMMENT '用户访问量',
+  PRIMARY KEY (`visit_id`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户访问量';
+
 CREATE TABLE `user_material` (
   `material_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '素材id',
   `user_id` bigint(20) unsigned NOT NULL COMMENT '用户ID',

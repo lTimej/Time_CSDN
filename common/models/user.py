@@ -77,6 +77,7 @@ class User(db.Model):
     fans_count = db.Column(db.Integer, default=0, doc='被关注的人数（粉丝数）')
     like_count = db.Column(db.Integer, default=0, doc='累计点赞人数')
     read_count = db.Column(db.Integer, default=0, doc='累计阅读人数')
+    code_year = db.Column(db.Integer, default=0, doc='码龄')
 
     account = db.Column(db.String, doc='账号')
     email = db.Column(db.String, doc='邮箱')
@@ -84,6 +85,7 @@ class User(db.Model):
 
     # 两种方法都可以
     # followings = db.relationship('Relation', primaryjoin='User.id==Relation.user_id')
+    profile = db.relationship('UserProfile', primaryjoin='User.id==foreign(UserProfile.id)', uselist=False)
     followings = db.relationship('Relation', foreign_keys='Relation.user_id')
 
 
@@ -149,6 +151,17 @@ class Search(db.Model):
     is_deleted = db.Column(db.Boolean, default=False, doc='是否删除')
     utime = db.Column('update_time', db.DateTime, default=datetime.now, onupdate=datetime.now, doc='更新时间')
 
+class Visitors(db.Model):
+    """
+    用户搜索记录表
+    ******************已废弃****************
+    """
+    __tablename__ = 'user_visitors'
+
+    id = db.Column('visit_id', db.Integer, primary_key=True, doc='主键ID')
+    user_id = db.Column(db.Integer, doc='用户ID')
+    ctime = db.Column('create_time', db.DateTime, default=datetime.now, doc='创建时间')
+    count = db.Column(db.Integer,default=0, doc='用户访问量')
 
 class Material(db.Model):
     """

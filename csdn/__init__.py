@@ -61,6 +61,6 @@ def create_app(config,enable_config_file=False):
 
     #fdfs
     from fdfs_client.client import Fdfs_client
-    app.fdfs_client = Fdfs_client('utils/fdfs/client.conf')
+    app.fdfs_client = Fdfs_client('/home/time/Time_CSDN/Time_CSDN/common/utils/fdfs/client.conf')
 
     return app
