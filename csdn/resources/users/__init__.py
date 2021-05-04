@@ -1,6 +1,6 @@
 from flask import Blueprint
 from flask_restful import Api, output_json
-from . import auth
+from . import auth,profile
 
 user_bp = Blueprint('user',__name__)
 
@@ -11,4 +11,5 @@ user_api.representation('application/json')(output_json)
 user_api.add_resource(auth.Auth,'/v1/login/auth',endpoint='auth')
 #获取短信验证码
 user_api.add_resource(auth.GetSmsCode,'/v1/login/smscode/<mobile:mobile>',endpoint='smscode')
-#用户头像
+#当前用户信息
+user_api.add_resource(profile.CurrUserProfile,'/v1/curr/user',endpoint='curruser')

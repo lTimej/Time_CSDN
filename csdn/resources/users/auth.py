@@ -5,7 +5,7 @@ from flask_limiter.util import get_remote_address
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
-from flask import current_app,request
+from flask import current_app, request, g
 
 from celery_tasks.sms.tasks import send_sms_code
 from models import db
@@ -83,7 +83,6 @@ class Auth(Resource):
         mobile = args.mobile
         sms_code = args.sms_code
         #获取redis中验证码
-        print(mobile,sms_code)
         key = "app:code:{}".format(mobile)
         try:#先从主中获取
             real_sms_code = current_app.redis_master.get(key)
@@ -110,7 +109,7 @@ class Auth(Resource):
                 user = User(id=user_id,mobile=mobile,
                             last_login=datetime.now(),
                             name=get_username(mobile),
-                            profile_photo=current_app.config['DEFAULT_TX'])
+                            )
                 db.session.add(user)
                 db.session.flush()
                 profile = UserProfile(id=user.id)
@@ -132,3 +131,8 @@ class Auth(Resource):
         刷新token
         :return:
         '''
+        if g.user_id is not None and g.is_refresh is True:
+            token,refresh_token = self._get_token(g.user_id,refresh=False)
+            return token
+        else:
+            return {'message': 'Invalid refresh token'}, 403

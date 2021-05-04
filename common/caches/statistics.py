@@ -107,6 +107,9 @@ class UserVisitCount(CountStorageBase):
     用户被访问数量
 
     '''
+    key = "user:visit:count"
+
+    @staticmethod
     def db_query(self):
         '''
         返回所有用户被访问的数量
