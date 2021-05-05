@@ -133,6 +133,6 @@ class Auth(Resource):
         '''
         if g.user_id is not None and g.is_refresh is True:
             token,refresh_token = self._get_token(g.user_id,refresh=False)
-            return token
+            return {'token':token,"refresh_token":refresh_token},201
         else:
             return {'message': 'Invalid refresh token'}, 403
