@@ -13,6 +13,7 @@ ALTER TABLE user_basic modify COLUMN password varchar(93) COMMENT '密码';
 ALTER TABLE user_profile ADD COLUMN area varchar(20) COMMENT '地区';
 ALTER TABLE user_profile ADD COLUMN company varchar(20) COMMENT '公司';
 ALTER TABLE user_profile ADD COLUMN career varchar(20) COMMENT '职业';
+ALTER TABLE user_profile ADD COLUMN tag varchar(20) COMMENT '标签';
 
 
 

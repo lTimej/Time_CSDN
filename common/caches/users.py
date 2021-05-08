@@ -167,9 +167,6 @@ class UserProfileCache():
             if user is None:
                 try:
                     user = User.query.join(User.profile).options(load_only(User.name, User.profile_photo, User.introduction, User.code_year),contains_eager(User.profile).load_only(UserProfile.career)).first()
-                    #                                     User.profile.career))
-                    # user = User.query.options(load_only(User.name, User.profile_photo, User.introduction, User.code_year,
-                    #                                     User.profile.career)).filter_by(id=self.user_id).first()
                 except DatabaseError as e:
                     # 获取失败，抛出异常
                     current_app.logger.erroe(e)
@@ -252,7 +249,7 @@ class UserProfileCache():
         user_dict['visitor'] = statistics.UserVisitCount.get(self.user_id)
         return user_dict
 
-    def clearCache(self):
+    def clear(self):
         '''
         清楚缓存
         :return:
@@ -284,3 +281,52 @@ class UserProfileCache():
                 return False
             else:
                 return True
+
+class UserOtherProfileCache():
+    '''
+    用户其他信息缓存，eg:生日，性别，标签，地区
+    '''
+    def __init__(self,user_id):
+        self.key = "user:{}:otherProfile".format(user_id)
+        self.user_id = user_id
+        self.redis_conn = current_app.redis_cluster
+    def get(self):
+        #从缓存重获取
+        try:
+            res = self.redis_conn.get(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
+            res = None
+        if not res:#缓存没有，从数据库获取
+            try: #数据库重存在，先存入缓存，然后返回数据
+                userProfile = UserProfile.query.options(load_only(UserProfile.birthday,UserProfile.gender,UserProfile.tag,UserProfile.area)).filter_by(id=self.user_id).first()
+                userProfile_dict = {
+                    'birthday':userProfile.birthday.strftime('%Y-%m-%d') if userProfile.birthday else '',
+                    'gender':'男' if userProfile.gender==0 else '女',
+                    'tag':userProfile.tag,
+                    'area':userProfile.area
+                }
+                try:
+                    self.redis_conn.setex(self.key,constants.UserAdditionalProfileCacheTTL.get_val(),json.dumps(userProfile_dict))
+                except RedisError as e:
+                    current_app.logger.error(e)
+                return userProfile_dict
+            except DatabaseError as e:# 数据库没有抛错
+                current_app.logger.error(e)
+                return {"message":"invalid data"},401
+        else:
+            userProfile_dict = json.loads(res)
+            return userProfile_dict
+
+    def clear(self):
+        '''
+        清楚其他信息缓存
+        :return:
+        '''
+        try:
+            self.redis_conn.delete(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
+
+
+

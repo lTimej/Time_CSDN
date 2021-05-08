@@ -114,6 +114,7 @@ class UserProfile(db.Model):
     area = db.Column(db.String, doc='地区')
     company = db.Column(db.String, doc='公司')
     career = db.Column(db.String, doc='职业')
+    tag = db.Column(db.String,doc='标签')
 
     followings = db.relationship('Relation', foreign_keys='Relation.user_id')
 

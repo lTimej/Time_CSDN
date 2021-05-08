@@ -11,7 +11,7 @@ class DefaultConfig():
 
     #默认头像
     DEFAULT_TX = 'group1/M00/00/00/wKiZgmCOpa6AbvCXAAEwN58xN6E181.png'
-    FDFS_DOMAIN = 'http://192.168.153.130:8888/'
+    FDFS_DOMAIN = 'http://192.168.153.132:8888/'
 
 
     ERROR_404_HELP = False
