@@ -39,13 +39,12 @@ class CurrUserProfile(Resource):
         修改用户信息
         :return:
         '''
-        print(22222,request.files,request.form.to_dict())
         #获取数据
         data = RequestParser()
         #校验数据
         data.add_argument('head_photo',type=parsers.checkout_img,required=False,location='files')
         # data.add_argument('image',type=FileStorage,location='files')
-        data.add_argument('user_name',type=inputs.regex(r'^.{1,7}$'),required=False,location='json')
+        data.add_argument('user_name',type=inputs.regex(r'^.{1,10}$'),required=False,location='json')
         data.add_argument('gender',type=parsers.checkout_gender,required=False,location='json')
         data.add_argument('introduce',type=inputs.regex(r'^.{99}$'),required=False,location='json')
         data.add_argument('tag',type=inputs.regex(r'^.{16}$'),required=False,location='json')
@@ -71,13 +70,14 @@ class CurrUserProfile(Resource):
             # 'Storage IP': '192.168.153.130'}
             res = current_app.fdfs_client.upload_by_buffer(args.head_photo.read(),file_ext_name='png')
             if res.get('Status') == 'Upload successed.':
-                img_url = current_app.config['FDFS_DOMAIN'] + res.get('Remote file_id')
+                img_url = res.get('Remote file_id')
                 userProfile['profile_photo'] = img_url
-                user_dict['head_photo'] = img_url
+                user_dict['head_photo'] = current_app.config['FDFS_DOMAIN'] + img_url
                 is_update_userProfileCache = True
             else:
                 return {'message': 'Uploading profile photo image failed.'}, 507
         # 存在修改
+        print(args.user_name)
         if args.user_name:
             userProfile['name'] = args.user_name
             user_dict['user_name'] = args.user_name
@@ -112,19 +112,19 @@ class CurrUserProfile(Resource):
             userOtherProfile['area'] = args.areas
             user_dict['areas'] = args.areas
             is_update_userOtherProfileCache = True
-        # try:
-        #     if userProfile:
-        #         User.query.filter_by(id=g.user_id).update(userProfile)
-        #     if userOtherProfile:
-        #         UserProfile.query.filter_by(id=g.user_id).update(userOtherProfile)
-        #     db.session.commit()
-        # except DatabaseError as e:
-        #     db.session.rollback()
-        #     return {'message': 'User name has existed.'}, 409
-        # if is_update_userProfileCache:
-        #     UserProfileCache(g.user_id).clear()
-        # if is_update_userOtherProfileCache:
-        #     UserOtherProfileCache(g.user_id).clear()
+        try:
+            if userProfile:
+                User.query.filter_by(id=g.user_id).update(userProfile)
+            if userOtherProfile:
+                UserProfile.query.filter_by(id=g.user_id).update(userOtherProfile)
+            db.session.commit()
+        except DatabaseError as e:
+            db.session.rollback()
+            return {'message': 'User name has existed.'}, 409
+        if is_update_userProfileCache:
+            UserProfileCache(g.user_id).clear()
+        if is_update_userOtherProfileCache:
+            UserOtherProfileCache(g.user_id).clear()
 
         return user_dict,201
 
