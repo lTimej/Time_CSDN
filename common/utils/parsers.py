@@ -110,3 +110,6 @@ def checkout_pwd(value):
             return pwd
         except:
             return value
+
+def checkout_username(value):
+    return value

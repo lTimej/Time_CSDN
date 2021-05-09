@@ -4,6 +4,8 @@ from datetime import datetime,timedelta
 from flask_limiter.util import get_remote_address
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
+from sqlalchemy import or_
+from sqlalchemy.exc import DatabaseError
 
 from flask import current_app, request, g
 
@@ -137,3 +139,41 @@ class Auth(Resource):
             return {'token':token,"refresh_token":refresh_token},201
         else:
             return {'message': 'Invalid refresh token'}, 403
+
+class Login(Resource):
+    def _get_token(self,user_id,refresh=True):
+        '''
+        获取token
+        :param user_id: 用户id
+        :param refresh: 默认生成一个刷新token
+        :return: token,refresh_token
+        '''
+        now = datetime.utcnow()
+        # json不能序列化datetime,所以转化为str
+        expiry = str(now + timedelta(hours=current_app.config['JWT_EXPIRY_HOURS']))
+        # 生成token
+        token = generate_jwt({'user_id': user_id, 'is_refresh': False}, expiry)
+        refresh_token = None
+        if refresh:
+            refresh_expiry = str(now + timedelta(days=current_app.config['JWT_REFRESH_DAYS']))
+            refresh_token = generate_jwt({'user_id': user_id, 'is_refresh': True}, refresh_expiry)
+        return token, refresh_token
+    def post(self):
+        data = RequestParser()
+        data.add_argument('username',type=parsers.checkout_username,required=True,location='json')
+        data.add_argument('password',type=parsers.checkout_pwd,required=True,location='json')
+        args = data.parse_args()
+        username = args.username
+        password = args.password
+        print(username,password)
+        try:
+            user = User.query.filter(or_(User.name==username,User.mobile==username,User.email==username),User.password==password).first()
+            if user:
+                token,refresh_token = self._get_token(user.id)
+                return {"token":token,"refresh_token":refresh_token},201
+            else:
+                return {"message":"username or password is error"},402
+        except DatabaseError as e:
+            current_app.logger.error(e)
+            return {"message": "data is abnormal"}, 405
+
