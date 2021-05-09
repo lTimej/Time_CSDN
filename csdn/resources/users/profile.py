@@ -43,8 +43,9 @@ class CurrUserProfile(Resource):
         data = RequestParser()
         #校验数据
         data.add_argument('head_photo',type=parsers.checkout_img,required=False,location='files')
-        # data.add_argument('image',type=FileStorage,location='files')
-        data.add_argument('user_name',type=inputs.regex(r'^.{1,10}$'),required=False,location='json')
+        data.add_argument('oldPwd', type=parsers.checkout_pwd, required=False, location='json')
+        data.add_argument('newPwd',type=parsers.checkout_pwd,required=False,location='json')
+        data.add_argument('user_name',type=inputs.regex(r'^.{1,20}$'),required=False,location='json')
         data.add_argument('gender',type=parsers.checkout_gender,required=False,location='json')
         data.add_argument('introduce',type=inputs.regex(r'^.{99}$'),required=False,location='json')
         data.add_argument('tag',type=inputs.regex(r'^.{16}$'),required=False,location='json')
@@ -82,6 +83,20 @@ class CurrUserProfile(Resource):
             userProfile['name'] = args.user_name
             user_dict['user_name'] = args.user_name
             is_update_userProfileCache = True
+        if args.newPwd:
+            if args.oldPwd:
+                user = User.query.filter_by(password=args.oldPwd).first()
+                if user:
+                   userProfile['password'] = args.newPwd
+                   user_dict['pwd'] = 1
+                   is_update_userProfileCache = True
+                else:
+                    return {'message': 'password is error.'}, 400
+            else:
+                userProfile['password'] = args.newPwd
+                user_dict['pwd'] = 1
+                is_update_userProfileCache = True
+
 
         if args.gender:
             userOtherProfile['gender'] = args.gender
@@ -125,7 +140,7 @@ class CurrUserProfile(Resource):
             UserProfileCache(g.user_id).clear()
         if is_update_userOtherProfileCache:
             UserOtherProfileCache(g.user_id).clear()
-
+        print(user_dict)
         return user_dict,201
 
 

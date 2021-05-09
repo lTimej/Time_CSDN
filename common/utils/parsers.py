@@ -3,6 +3,7 @@ import datetime
 import re
 import imghdr
 from models.user import UserProfile
+from utils.md5_pwd import encrypt
 
 
 def mobile(str_mobile):
@@ -98,3 +99,14 @@ def checkout_date(value):
         raise ValueError('Invalid date')
     else:
         return _date
+
+def checkout_pwd(value):
+    text = r'^.{8,16}$'
+    if not re.match(text,value):
+        raise ValueError('Invalid date')
+    else:
+        try:
+            pwd = encrypt(value)
+            return pwd
+        except:
+            return value

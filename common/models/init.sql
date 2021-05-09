@@ -68,6 +68,7 @@ CREATE TABLE `user_basic` (
   `fans_count` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '被关注的人数',
   `like_count` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '累计点赞人数',
   `read_count` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '累计阅读人数',
+  `code_year` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '码龄',
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `mobile` (`mobile`),
   UNIQUE KEY `user_name` (`user_name`)
@@ -88,6 +89,7 @@ CREATE TABLE `user_profile` (
   `area` varchar(20) COMMENT '地区',
   `company` varchar(20) COMMENT '公司',
   `career` varchar(20) COMMENT '职业',
+  `tag` varchar(20) COMMENT '标签',
   PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户资料表';
 

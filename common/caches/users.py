@@ -182,6 +182,8 @@ class UserProfileCache():
                     # 构造字典
                     user_dict = {
                         'user_name': user.name,
+                        'mobile':user.mobile[0:3] + "****" + user.mobile[7:],
+                        'pwd':1 if user.password else 0,
                         'head_photo': user.profile_photo,
                         'introduction': user.introduction,
                         'code_year': user.code_year,
@@ -198,6 +200,8 @@ class UserProfileCache():
             else:
                 user_dict = {
                     'user_name': user.name,
+                    'mobile': user.mobile[0:3] + "****" + user.mobile[7:],
+                    'pwd': 1 if user.password != "" else 0,
                     'head_photo': user.profile_photo,
                     'introduction': user.introduction,
                     'code_year': user.code_year,
