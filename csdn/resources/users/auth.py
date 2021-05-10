@@ -159,14 +159,20 @@ class Login(Resource):
             refresh_token = generate_jwt({'user_id': user_id, 'is_refresh': True}, refresh_expiry)
         return token, refresh_token
     def post(self):
+        '''
+        账号密码登录
+        :return:
+        '''
+        #获取参数
         data = RequestParser()
+        #校验
         data.add_argument('username',type=parsers.checkout_username,required=True,location='json')
+        #密码做了hashlib  md5加密处理
         data.add_argument('password',type=parsers.checkout_pwd,required=True,location='json')
         args = data.parse_args()
         username = args.username
         password = args.password
-        print(username,password)
-        try:
+        try:#账号允许用户名/手机号/邮箱登录
             user = User.query.filter(or_(User.name==username,User.mobile==username,User.email==username),User.password==password).first()
             if user:
                 token,refresh_token = self._get_token(user.id)

@@ -1,5 +1,7 @@
 from flask import Blueprint
-from flask_restful import Api, output_json
+from flask_restful import Api,output_json
+
+# from utils.output import output_json
 from . import auth,profile
 
 user_bp = Blueprint('user',__name__)

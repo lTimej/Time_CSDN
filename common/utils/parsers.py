@@ -101,6 +101,12 @@ def checkout_date(value):
         return _date
 
 def checkout_pwd(value):
+    '''
+    密码校验
+    MD5加密
+    :param value:
+    :return: 返回加密后的密码
+    '''
     text = r'^.{8,16}$'
     if not re.match(text,value):
         raise ValueError('Invalid date')
@@ -112,4 +118,9 @@ def checkout_pwd(value):
             return value
 
 def checkout_username(value):
+    '''
+    用户名校验
+    :param value:
+    :return:
+    '''
     return value

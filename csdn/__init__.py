@@ -49,6 +49,9 @@ def create_app(config,enable_config_file=False):
     #用户类注册
     from .resources.users import user_bp
     app.register_blueprint(user_bp)
+    #文章类注册
+    from .resources.articles import  article_bp
+    app.register_blueprint(article_bp)
 
     #雪花算法生成user_id
     from utils.snowflake.id_worker import IdWorker

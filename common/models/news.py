@@ -85,7 +85,6 @@ class ArticleContent(db.Model):
 class ArticleStatistic(db.Model):
     """
     文章统计表
-    ******************已废弃****************
     """
     __tablename__ = 'news_article_statistic'
 

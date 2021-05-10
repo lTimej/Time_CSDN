@@ -4,6 +4,7 @@ from redis.exceptions import RedisError
 from sqlalchemy import func
 
 from models.user import Relation,Visitors
+from models.news import Article,ArticleStatistic,Comment,Collection,CommentLiking,Attitude
 from models import db
 
 class CountStorageBase(object):
@@ -110,10 +111,67 @@ class UserVisitCount(CountStorageBase):
     key = "user:visit:count"
 
     @staticmethod
-    def db_query(self):
+    def db_query():
         '''
         返回所有用户被访问的数量
         user_id : visits
         :return:
         '''
         return db.session.query(Visitors.count).all()
+
+class ArticleReadCount(CountStorageBase):
+    '''
+    某篇文章访问量
+    '''
+    key = "article:read:count"
+
+class UserArticleReadCount(CountStorageBase):
+    '''
+    用户所有阅读量
+    '''
+    key = "user:article:read:count"
+
+class ArticleCommentCount(CountStorageBase):
+    '''
+    文章评论数
+    '''
+    key = "article:comment:count"
+    @staticmethod
+    def db_query():
+        return db.session.query(Comment.article_id,func.count(Comment.id)).filter(Comment.status==Comment.STATUS.APPROVED).group_by(Comment.article_id).all()
+
+class ArticleCommentResponseCount(CountStorageBase):
+    '''
+    文章评论回复
+    '''
+    key = "article:comment:response:count"
+    @staticmethod
+    def db_query():
+        return db.session.query(Comment.parent_id,func.count(Comment.id)).filter(Comment.status==Comment.STATUS.APPROVED,Comment.parent_id!=None).group_by(Comment.parent_id).all()
+
+class ArticleCommentResponseLikeCount(CountStorageBase):
+    '''
+    文章评论点赞数
+    '''
+    key = "article:comment:like:count"
+    @staticmethod
+    def db_query():
+        return db.session.query(CommentLiking.comment_id,func.count(CommentLiking.comment_id)).filter(CommentLiking.is_deleted==0).group_by(CommentLiking.comment_id).all()
+
+class ArticleLikeCount(CountStorageBase):
+    '''
+    文章点赞数
+    '''
+    key = "article:like:count"
+    @staticmethod
+    def db_query():
+        return db.session.query(Attitude.article_id,func.count(Attitude.article_id)).filter(Attitude.attitude==Attitude.ATTITUDE.LIKING).group_by(Attitude.article_id).all()
+
+class ArticleCollectionCount(CountStorageBase):
+    '''
+    文章收藏量
+    '''
+    key = "article:collection:count"
+    @staticmethod
+    def db_query():
+        return db.session.query(Collection.article_id,func.count(Collection.article_id)).filter(Collection.is_deleted==0).group_by(Collection.article_id).all()
