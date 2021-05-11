@@ -15,7 +15,6 @@ class AllArticleChannel():
     redis:   string:   key:value
     '''
     keys = "all:channel"
-    redis_conn = current_app.redis_cluster
 
     @classmethod
     def get(cls):
@@ -24,8 +23,9 @@ class AllArticleChannel():
         :return: [{'channel_name':"",'id':1},{},{}]
         '''
         #从缓存中获取
+        redis_conn = current_app.redis_cluster
         try:
-            res = cls.redis_conn.get(cls.keys)
+            res = redis_conn.get(cls.keys)
         except RedisError as e:
             current_app.logger.error(e)
             res = None
@@ -47,7 +47,7 @@ class AllArticleChannel():
                 'channel_name': channel.name
             })
         try:#存入redis
-            cls.redis_conn.setex(cls.keys,constants.ALL_CHANNELS_CACHE_TTL,json.dumps(channel_list))
+            redis_conn.setex(cls.keys,constants.ALL_CHANNELS_CACHE_TTL,json.dumps(channel_list))
         except RedisError as e:
             current_app.logger.error(e)
         #返回
@@ -58,8 +58,9 @@ class AllArticleChannel():
         清楚缓存
         :return:
         '''
+        redis_conn = current_app.redis_cluster
         try:
-            cls.redis_conn.delete(cls.keys)
+            redis_conn.delete(cls.keys)
         except RedisError as e:
             current_app.logger.error(e)
 
