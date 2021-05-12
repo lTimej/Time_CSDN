@@ -9,6 +9,20 @@ class GetAllChannel(Resource):
         :return:
         '''
         channels = cache_channel.AllArticleChannel().get()
+        channels.insert(0,{
+            'id': 0,
+            'channel_name': "热榜"
+        })
+        channels.insert(0,{
+            'id': -1,
+            'channel_name': "推荐"
+        })
+        channels.insert(0,{
+            'id':-2,
+            'channel_name':"关注"
+        })
+
+
         return {"channels":channels},201
 
 

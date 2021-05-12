@@ -124,3 +124,16 @@ def checkout_username(value):
     :return:
     '''
     return value
+
+def checkout_page(value):
+    '''
+    页码
+    :return:
+    '''
+    try:
+        page = int(value)
+    except:
+        page = 0
+    if page<0:
+        page = 0
+    return page

@@ -177,7 +177,12 @@ class ArticleUserNoAttitudeCacheTTL(BaseCacheTTL):
     """
     TTL = 3 * 60
     MAX_DELTA = 30
-
+class ChannelArticleCacheTTL(BaseCacheTTL):
+    """
+        频道文章缓存时间，秒
+        """
+    TTL = 10 * 60
+    MAX_DELTA = 2 * 60
 
 class UserArticlesCacheTTL(BaseCacheTTL):
     """
