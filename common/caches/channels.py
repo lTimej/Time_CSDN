@@ -123,17 +123,22 @@ class UserArticleChannel():
             return user_channels
 
     def clear(self):
+        '''
+        清楚缓存
+        :return:
+        '''
         try:
             self.redis_conn.delete(self.key)
         except RedisError as e:
             current_app.logger.error(e)
     def exist(self,channel_id):
+        '''判断该频道是否存在'''
         user_channels = self.get()
-        for i in user_channels:
-            if i.get('id') == channel_id:
-                return True
+        if user_channels:
+            for i in user_channels:
+                if i.get('id') == channel_id:
+                    return True
         return False
-
 
 class DefaultChannelCache():
     '''
@@ -180,8 +185,12 @@ class AnonyUserChannel():
     key = 'anony:channel'
     @classmethod
     def get(cls):
+        '''
+        获取匿名用户频道缓存
+        :return:
+        '''
         redis_conn = current_app.redis_master
-        try:
+        try:#获取缓存，并转化为python属性
             res = redis_conn.get(cls.key)
             res = json.loads(res)
         except Exception as e:
@@ -192,6 +201,11 @@ class AnonyUserChannel():
 
     @classmethod
     def save(cls,channels):
+        '''
+        保存缓存
+        :param channels:
+        :return:
+        '''
         redis_conn = current_app.redis_master
         try:
             redis_conn.setex(cls.key, constants.ANONY_USER_CHANNELS_CACHE_TTL, json.dumps(channels))
@@ -201,6 +215,10 @@ class AnonyUserChannel():
 
     @classmethod
     def clear(cls):
+        '''
+        清楚缓存
+        :return:
+        '''
         redis_conn = current_app.redis_master
         try:
             redis_conn.delete(cls.key)
@@ -209,10 +227,16 @@ class AnonyUserChannel():
 
     @classmethod
     def exist(cls,channel_id):
+        '''
+        判断该频道是否存在
+        :param channel_id:
+        :return:
+        '''
         res = cls.get()
-        for ret in res:
-            if ret.get('id') == channel_id:
-                return True
+        if res:
+            for ret in res:
+                if ret.get('id') == channel_id:
+                    return True
         return False
 
 

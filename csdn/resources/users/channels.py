@@ -17,19 +17,19 @@ from models.news import UserChannel,Channel
 
 class UserChannelView(Resource):
     method_decorators = [is_login]
-
     def _save(self,channel):
         '''
         保存数据库
         :return:
         '''
         try:
+            #修改
             uc = UserChannel.query.filter_by(user_id=g.user_id, channel_id=channel.get('id'),is_deleted=1).first()
             if uc:
                 uc.is_deleted = False
                 db.session.add(uc)
                 db.session.commit()
-            else:
+            else:#保存
                 user_channel = UserChannel(user_id=g.user_id, channel_id=channel.get('id'))
                 # 保存数据库
                 db.session.add(user_channel)
@@ -52,6 +52,8 @@ class UserChannelView(Resource):
             # 如果为空，这季节把匿名用户关注频道保存数据库，并返回
             if not user_channels:
                 #保存数据库
+                if not channels:
+                    return {'channels': channels}, 201
                 for channel in channels:
                     self._save(channel)
                 # 更新数据库，就要更新缓存
@@ -102,6 +104,8 @@ class UserChannelView(Resource):
                 #获取原有匿名用户频道缓存
                 channels = AnonyUserChannel.get()
                 #将新的添加到列表
+                if not channels:
+                    channels = []
                 channels.append(channels_dict)
                 #重新做缓存
                 AnonyUserChannel.save(channels)
