@@ -23,7 +23,7 @@ class UserCache():
         '''
         初始化key和用户id
         '''
-        self.key = "user:{}:profile".format(user_id)
+        self.key = "user:{}:basic:profile".format(user_id)
         self.user_id = user_id
         self.redis_conn = current_app.redis_cluster
 
@@ -39,7 +39,7 @@ class UserCache():
         '''
         #1、从数据库中获取
         try:
-            user = User.query.options(load_only(User.name,User.profile_photo,User.introduction,User.code_year,User.profile.career)).filter_by(id=self.user_id).first()
+            user = User.query.join(User.profile).options(load_only(User.name, User.profile_photo, User.introduction, User.code_year),contains_eager(User.profile).load_only(UserProfile.career)).filter(User.id==self.user_id).first()
         except DatabaseError as e:
             #获取失败，抛出异常
             current_app.logger.erroe(e)
@@ -166,7 +166,7 @@ class UserProfileCache():
         if not exist:
             if user is None:
                 try:
-                    user = User.query.join(User.profile).options(load_only(User.name, User.profile_photo, User.introduction, User.code_year),contains_eager(User.profile).load_only(UserProfile.career)).first()
+                    user = User.query.join(User.profile).options(load_only(User.name, User.profile_photo, User.introduction, User.code_year),contains_eager(User.profile).load_only(UserProfile.career)).filter(User.id==self.user_id).first()
                 except DatabaseError as e:
                     # 获取失败，抛出异常
                     current_app.logger.erroe(e)
@@ -331,6 +331,46 @@ class UserOtherProfileCache():
             self.redis_conn.delete(self.key)
         except RedisError as e:
             current_app.logger.error(e)
+
+class UserStatusCache():
+    '''
+    用户状态
+    '''
+    def __init__(self,user_id):
+        self.key = "user:status:{}".format(user_id)
+        self.user_id = user_id
+        self.redis_conn = current_app.redis_cluster
+
+    def get(self):
+        try:
+            res = self.redis_conn.get(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
+            res = None
+        #存在，返回
+        if res:
+            return res
+        #不存在，数据库获取
+        try:
+            us = User.query.options(load_only(User.status)).filter(User.id==self.user_id).first()
+        except DatabaseError as e:
+            current_app.logger.error(e)
+            raise e
+        if not us:
+            return False
+        #存入缓存
+        try:
+            self.redis_conn.setex(self.key,constants.UserStatusCacheTTL.get_val(),us.status)
+        except RedisError as e:
+            current_app.logger.error(e)
+        return us.status
+    def clear(self):
+        try:
+            self.redis_conn.delete(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
+
+
 
 
 

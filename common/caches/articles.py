@@ -145,7 +145,6 @@ class ChannelArticleCache():
             #返回有序集 key 中，指定区间内的成员
             pl.zrevrange(self.key,(page-1)*page_num,page*page_num)
             total_num,res = pl.execute()#res = [b'4', b'51', b'54', b'55', b'8', b'6', b'9', b'59', b'10', b'52', b'57']
-            print('------------------res--------------------------->',res)
         except RedisError as e:
             current_app.logger.error(e)
             total_num = 0
@@ -170,7 +169,6 @@ class ChannelArticleCache():
                     pl.zadd(self.key,*caches)
                     pl.expire(self.key, constants.ChannelArticleCacheTTL.get_val())
                     results = pl.execute()#[20, True]
-                    print('----------------------results----------------------------->',results)
                     if results[0] and not results[1]:
                         self.redis_conn.delete(self.key)
                 except RedisError as e:
@@ -248,6 +246,18 @@ class ArticlesDetailCache():
                 detail_dict = json.loads(res)
         else:
             detail_dict = self.save()
+        detail_dict = self.addFields(detail_dict)
+        return detail_dict
+    def addFields(self,detail_dict):
+        '''
+        增加字段
+        :param article_dict:
+        :return:
+        '''
+        detail_dict['read_num'] = article_statistics.ArticleReadCount.get(self.article_id)
+        detail_dict['comment_num'] = article_statistics.ArticleCommentCount.get(self.article_id)
+        detail_dict['like_num'] = article_statistics.ArticleLikeCount.get(self.article_id)
+        detail_dict['collection_num'] = article_statistics.ArticleCollectionCount.get(self.article_id)
         return detail_dict
 
     def clear(self):

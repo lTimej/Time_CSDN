@@ -23,10 +23,11 @@ class ArticleList(Resource):
         args = data.parse_args()
         page = args.page
         page_num = args.page_num if args.page_num else constants.DEFAULT_ARTICLE_PER_PAGE_MIN
-
+        #获取文章id
         total_num,page_articles = ChannelArticleCache(channel_id).get_page_content(page,page_num)
         results = []
         for article_id in page_articles:
+            #获取文章详情信息
             articles = ArticlesDetailCache(article_id).get()
             if articles:
                 results.append(articles)

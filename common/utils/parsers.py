@@ -137,3 +137,12 @@ def checkout_page(value):
     if page<0:
         page = 0
     return page
+def checkout_channel_name(value):
+    '''
+    用户名校验
+    :param value:
+    :return:
+    '''
+    if not isinstance(value,str):
+        raise ValueError('invalued {}'.format(value))
+    return value
