@@ -209,7 +209,7 @@ class ArticlesDetailCache():
         detail_dict = {
             'title':detail.title,
             'user_id':detail.user_id,
-            'create_time':str(detail.ctime),
+            'create_time':str(detail.ctime)[:str(detail.ctime).find(' ')],
             'art_id':detail.id,
             'channel_id':detail.channel_id,
             'content':detail.content.content

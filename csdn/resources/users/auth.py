@@ -125,7 +125,6 @@ class Auth(Resource):
             if user.status == User.STATUS.DISABLE:
                 return {"message":"this user is not exist"},403
         #响应之前构造token认证码
-        print(888888,user.id)
         token,refresh_token = self._get_token(user.id)
         return {"token":token,"refresh_token":refresh_token},201
 

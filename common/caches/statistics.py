@@ -69,6 +69,25 @@ class CountStorageBase(object):
         pl.zadd(cls.key,*counts)
         pl.execute()
 
+class UserArticleCount(CountStorageBase):
+    '''
+            用户关注数
+    关注表 Relation:
+    一个用户可以右多个关注对象，采用分组聚合查询
+    '''
+    key = "user:article:count"
+    #直接类名调用
+    @staticmethod
+    def db_query():
+        '''
+        返回所有用户的关注数量
+        user_id:count
+        :return:
+        '''
+        #查询每个用户关注的人数，过滤出是关注模式，通过用户id来分组
+        return db.session.query(Article.user_id, func.count(Article.id)) \
+            .filter(Article.status == Article.STATUS.APPROVED) \
+            .group_by(Article.user_id).all()
 class UserFocusCount(CountStorageBase):
     '''
             用户关注数

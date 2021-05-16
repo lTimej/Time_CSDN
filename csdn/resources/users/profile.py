@@ -26,6 +26,7 @@ class CurrUserProfile(Resource):
         :return:
         '''
         user_id = g.user_id
+        print(8888888888888,user_id)
         #获取基本信息
         user_dict = UserProfileCache(user_id).get()
         #获取其他信息

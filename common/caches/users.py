@@ -6,6 +6,7 @@ from sqlalchemy.orm import load_only, contains_eager
 from sqlalchemy.exc import DatabaseError
 
 from models.user import User,UserProfile
+from models.news import Article, ArticleContent
 
 from . import constants
 
@@ -370,6 +371,84 @@ class UserStatusCache():
         except RedisError as e:
             current_app.logger.error(e)
 
+class UserArticleCache():
+    '''
+    当前用户文章缓存
+    '''
+    def __init__(self,user_id):
+        self.key = "user:article:{}".format(user_id)
+        self.user_id = user_id
+        self.redis_conn = current_app.redis_cluster
+
+    def save(self,page,page_num):
+        '''
+        保存
+        :param page: 页数
+        :param page_num: 每页多少个数据，默认10个
+        :return:
+        '''
+        try:#从数据库中获取
+            articles = Article.query.options(load_only(Article.id,Article.ctime)).filter(Article.user_id==self.user_id,Article.status==Article.STATUS.DRAFT).order_by(Article.ctime.desc()).all()
+        except DatabaseError as e:
+            current_app.logger.error(e)
+            raise e
+
+        if not articles:
+            return 0,[]
+        article_ids = []
+        cache = []
+        #获取文章id列表
+        for article in articles:
+            article_ids.append(article.id)
+            cache.append(article.ctime.timestamp())
+            cache.append(article.id)
+        if cache:
+            try:#写入缓存
+                pl = self.redis_conn.pipeline()#开启管道
+                pl.zadd(self.key,*cache)#增加
+                pl.expire(self.key,constants.UserArticlesCacheTTL.get_val())#设置过期时间
+                result = pl.execute()#执行
+                if result[0] and not result[1]:
+                    self.redis_conn.delete(self.key)
+            except RedisError as e:
+                current_app.logger.error(e)
+        total_num = len(article_ids)
+        #获取指定区间数据
+        articleIds = article_ids[(page-1)*page_num:page*page_num]
+        return total_num,articleIds
+
+    def get_page(self,page,page_num):
+        '''
+        获取数据
+        :return:
+        '''
+        #从缓存中获取
+        try:
+            pl = self.redis_conn.pipeline()
+            pl.zcard(self.key)
+            pl.zrevrange(self.key,(page-1)*page_num,page*page_num)
+            total_num,res = pl.execute()
+        except RedisError as e:
+            current_app.logger.error(e)
+            total_num = 0
+            res = []
+        if total_num >0:
+            return total_num,[int(article_id) for article_id in res]
+        # total_num = statistics.UserArticleCount.get(self.user_id)
+        # if total_num == 0:
+        #     return 0,[]
+        #从数据库中获取，并保存缓存
+        total_num,articleIds = self.save(page,page_num)
+        return total_num,articleIds
+
+    def clear(self):
+        try:
+            self.redis_conn.delete(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
+
+    def exist(self):
+        pass
 
 
 
