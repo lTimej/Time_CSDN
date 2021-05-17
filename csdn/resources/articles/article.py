@@ -64,6 +64,7 @@ class UserArticleList(Resource):
             articles = ArticlesDetailCache(article_id).get()
             if articles:
                 results.append(articles)
+        # print(results)
         return {"total_num": total_num, "page": page, "page_num": page_num, "articles": results}, 201
 
 

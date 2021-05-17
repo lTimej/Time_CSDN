@@ -214,16 +214,19 @@ class ArticlesDetailCache():
             'channel_id':detail.channel_id,
             'content':detail.content.content
         }
+        # 获取文章作者相关信息
+        user = user_cache.UserProfileCache(detail_dict.get('user_id')).get()
+        detail_dict['user_name'] = user.get('user_name')
+        detail_dict['head_photo'] = user.get('head_photo')
+        detail_dict['career'] = user.get('career')
+        detail_dict['code_year'] = user.get('code_year')
         # 缓存
         article_cache = json.dumps(detail_dict)
         try:
             self.redis_conn.setex(self.key, constants.ArticleDetailCacheTTL.get_val(), article_cache)
         except RedisError as e:
             current_app.logger.error(e)
-            #获取文章作者相关信息
-        user = user_cache.UserProfileCache(detail_dict.get('user_id')).get()
-        detail_dict['user_name'] = user.get('user_name')
-        detail_dict['head_photo'] = user.get('head_photo')
+
         #响应数据
         return detail_dict
 
