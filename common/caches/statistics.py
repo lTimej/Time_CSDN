@@ -88,6 +88,7 @@ class UserArticleCount(CountStorageBase):
         return db.session.query(Article.user_id, func.count(Article.id)) \
             .filter(Article.status == Article.STATUS.APPROVED) \
             .group_by(Article.user_id).all()
+
 class UserFocusCount(CountStorageBase):
     '''
             用户关注数

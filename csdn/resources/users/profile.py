@@ -10,7 +10,7 @@ from utils.decorator import login_required
 
 from caches.users import UserProfileCache,UserOtherProfileCache
 from models.user import User,UserProfile
-
+#获取当前用户所有信息
 class CurrUserProfile(Resource):
     '''
     获取当前登录用户基本信息
@@ -26,7 +26,6 @@ class CurrUserProfile(Resource):
         :return:
         '''
         user_id = g.user_id
-        print(8888888888888,user_id)
         #获取基本信息
         user_dict = UserProfileCache(user_id).get()
         #获取其他信息

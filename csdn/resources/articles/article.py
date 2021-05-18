@@ -9,7 +9,9 @@ from . import  constants
 from caches.articles import ChannelArticleCache,ArticlesDetailCache
 
 class ArticleList(Resource):
-
+    '''
+    所有文章
+    '''
     def get(self,channel_id):
         '''
         获取所选频道的文章数据
@@ -38,6 +40,9 @@ class ArticleList(Resource):
         return {"total_num":total_num,"page":page,"page_num":page_num,"articles":results},201
 
 class UserArticleList(Resource):
+    '''
+    当前用户文章
+    '''
     method_decorators = [login_required]
     def get(self):
         '''
@@ -64,7 +69,6 @@ class UserArticleList(Resource):
             articles = ArticlesDetailCache(article_id).get()
             if articles:
                 results.append(articles)
-        # print(results)
         return {"total_num": total_num, "page": page, "page_num": page_num, "articles": results}, 201
 
 

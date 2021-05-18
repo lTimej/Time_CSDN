@@ -13,14 +13,11 @@ article_api.representation('application/json')(output_json)
 article_api.add_resource(article.ArticleList,'/v1/articles/<int(min=1):channel_id>',endpoint='article')
 #每个用户的文章
 article_api.add_resource(article.UserArticleList,'/v1/user/articles',endpoint='userArticle')
-
 #所有频道
 article_api.add_resource(chaneels.GetAllChannel,'/v1/articles/channel',endpoint='channels')
-
 #默认频道
 article_api.add_resource(chaneels.GetDefaultChannel,'/v1/default/channel',endpoint='dchannels')
-
-#默认频道
+#用户频道频道
 article_api.add_resource(user_channel.UserChannelView,'/v1/user/channel',endpoint='anonychannels')
 
 
