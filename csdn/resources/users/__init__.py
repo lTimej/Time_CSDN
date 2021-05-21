@@ -2,7 +2,7 @@ from flask import Blueprint
 from flask_restful import Api,output_json
 
 # from utils.output import output_json
-from . import auth,profile
+from . import auth,profile,focus
 
 user_bp = Blueprint('user',__name__)
 
@@ -17,3 +17,7 @@ user_api.add_resource(auth.Login,'/v1/login',endpoint='login')
 user_api.add_resource(auth.GetSmsCode,'/v1/login/smscode/<mobile:mobile>',endpoint='smscode')
 #当前用户信息
 user_api.add_resource(profile.CurrUserProfile,'/v1/curr/user',endpoint='curruser')
+#用户关注
+user_api.add_resource(focus.UserFocus,'/v1/user/focus',endpoint='focus')
+#用户粉丝
+user_api.add_resource(focus.UserFans,'/v1/user/fans',endpoint='fans')

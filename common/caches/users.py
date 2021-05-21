@@ -5,7 +5,7 @@ from flask import current_app
 from sqlalchemy.orm import load_only, contains_eager
 from sqlalchemy.exc import DatabaseError
 
-from models.user import User,UserProfile
+from models.user import User,UserProfile,Relation
 from models.news import Article, ArticleContent
 
 from . import constants
@@ -449,6 +449,128 @@ class UserArticleCache():
 
     def exist(self):
         pass
+
+class UserFocusCache():
+    '''
+    用户关注缓存数据
+    '''
+    def __init__(self,user_id):
+        self.key = "user:focus:{}".format(user_id)
+        self.user_id = user_id
+        self.redis_conn = current_app.redis_cluster
+    def get(self):
+        try:#从缓存中获取
+            res = self.redis_conn.zrevrange(self.key,0,-1)
+        except RedisError as e:
+            current_app.logger.error(e)
+            res = None
+        if res:#缓存存在直接返回
+            return [int(focused_user_id) for focused_user_id in res]
+        try:
+            ret = Relation.query.options(load_only(Relation.target_user_id, Relation.utime)) \
+                .filter_by(user_id=self.user_id, relation=Relation.RELATION.FOLLOW) \
+                .order_by(Relation.utime.desc()).all()
+        except DatabaseError as e:
+            current_app.logger.error(e)
+            raise e
+        if not ret:
+            return []
+        #当前用户关注的用户id列表
+        followings = []
+        #缓存列表
+        cache = []
+        #循环构造
+        for relation in ret:
+            followings.append(relation.target_user_id)
+            cache.append(relation.utime.timestamp())
+            cache.append(relation.target_user_id)
+        if cache:#缓存部位空，存入redis
+            try:
+                pl = self.redis_conn.pipeline()
+                pl.zadd(self.key, *cache)
+                pl.expire(self.key, constants.UserFollowingsCacheTTL.get_val())
+                results = pl.execute()
+                if results[0] and not results[1]:
+                    self.redis_conn.delete(self.key)
+            except RedisError as e:
+                current_app.logger.error(e)
+        #被关注人的id
+        return followings
+
+    def update(self,target_id,timestamp,incr=1):
+        '''
+        及时关注的更新至缓存
+        :return:
+        '''
+        try:
+            TTL = self.redis_conn.ttl(self.key)
+            if TTL > constants.ALLOW_UPDATE_FOLLOW_CACHE_TTL_LIMIT:
+                if incr > 0 :
+                    self.redis_conn.zadd(self.key,timestamp,target_id)
+                else:
+                    self.redis_conn.zrem(self.key,target_id)
+        except RedisError as e:
+            current_app.logger.error(e)
+
+class UserFansCache():
+    '''
+    当前用户粉丝列表缓存
+    '''
+    def __init__(self, user_id):
+        self.key = "user:fans:{}".format(user_id)
+        self.user_id = user_id
+        self.redis_conn = current_app.redis_cluster
+    def get(self):
+        #缓存中获取
+        try:
+            res = self.redis_conn.zrevrange(self.redis_conn,0,-1)
+        except RedisError as e:
+            current_app.logger.error(e)
+            res = None
+        if res:#存在，直接返回
+            return [int(fans_id) for fans_id in res]
+        try:
+            ret = Relation.query.options(load_only(Relation.user_id, Relation.utime)) \
+                .filter_by(target_user_id=self.user_id, relation=Relation.RELATION.FOLLOW) \
+                .order_by(Relation.utime.desc()).all()
+        except DatabaseError as e:
+            current_app.logger.error(e)
+            raise e
+        fans = []
+        cache = []
+
+        for f in ret:
+            fans.append(f.user_id)
+            cache.append(f.utime.timestamp())
+            cache.append(f.user_id)
+
+        if cache:
+            try:
+                pl = self.redis_conn.pipeline()
+                pl.zadd(self.key, *cache)
+                pl.expire(self.key, constants.UserFansCacheTTL.get_val())
+                results = pl.execute()
+                if results[0] and not results[1]:
+                    self.redis_conn.delete(self.key)
+            except RedisError as e:
+                current_app.logger.error(e)
+        return fans
+    def update(self,target_id,timestamp,incr=1):
+        try:
+            ttl = self.redis_conn.ttl(self.key)
+            if ttl > constants.ALLOW_UPDATE_FOLLOW_CACHE_TTL_LIMIT:
+                if incr > 0:
+                    self.redis_conn.zadd(self.key, timestamp, target_id)
+                else:
+                    self.redis_conn.zrem(self.key, target_id)
+        except RedisError as e:
+            current_app.logger.error(e)
+
+
+
+
+
+
 
 
 

@@ -208,7 +208,7 @@ class ArticlesDetailCache():
         #构造文章数据结构
         detail_dict = {
             'title':detail.title,
-            'user_id':detail.user_id,
+            'user_id':str(detail.user_id),
             'create_time':str(detail.ctime)[:str(detail.ctime).find(' ')],
             'art_id':detail.id,
             'channel_id':detail.channel_id,

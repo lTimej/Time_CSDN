@@ -4,6 +4,7 @@ import re
 import imghdr
 from models.user import UserProfile
 from utils.md5_pwd import encrypt
+from caches import users as user_cache
 
 
 def mobile(str_mobile):
@@ -146,3 +147,18 @@ def checkout_channel_name(value):
     if not isinstance(value,str):
         raise ValueError('invalued {}'.format(value))
     return value
+
+def checkout_user_id(value):
+    try:
+        _user_id = int(value)
+    except Exception:
+        raise ValueError('Invalid target user id.')
+    else:
+        if _user_id <= 0:
+            raise ValueError('Invalid target user id.')
+        else:
+            ret = user_cache.UserProfileCache(_user_id).user_is_exist()
+            if ret:
+                return _user_id
+            else:
+                raise ValueError('Invalid target user id.')

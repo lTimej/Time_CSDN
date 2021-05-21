@@ -37,7 +37,7 @@ class CountStorageBase(object):
         else:
             return int(count)
     @classmethod
-    def incr(cls,user_id,incr_num):
+    def incr(cls,user_id,incr_num=1):
         '''
         数量自增     eg:用户点击关注，则关注量自增1
         :param user_id:

@@ -17,7 +17,6 @@ class Channel(db.Model):
     is_visible = db.Column(db.Boolean, default=False, doc='是否可见')
     is_default = db.Column(db.Boolean, default=False, doc='是否默认')
 
-
 class UserChannel(db.Model):
     """
     用户关注频道表
