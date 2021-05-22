@@ -71,7 +71,7 @@ class CountStorageBase(object):
 
 class UserArticleCount(CountStorageBase):
     '''
-            用户关注数
+    用户关注数
     关注表 Relation:
     一个用户可以右多个关注对象，采用分组聚合查询
     '''
@@ -91,7 +91,7 @@ class UserArticleCount(CountStorageBase):
 
 class UserFocusCount(CountStorageBase):
     '''
-            用户关注数
+    用户关注数
     关注表 Relation:
     一个用户可以右多个关注对象，采用分组聚合查询
     '''

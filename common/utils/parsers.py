@@ -157,7 +157,9 @@ def checkout_user_id(value):
         if _user_id <= 0:
             raise ValueError('Invalid target user id.')
         else:
+            print("adkjd",_user_id)
             ret = user_cache.UserProfileCache(_user_id).user_is_exist()
+            print(ret,22222)
             if ret:
                 return _user_id
             else:

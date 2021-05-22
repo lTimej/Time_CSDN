@@ -160,6 +160,7 @@ class UserProfileCache():
                 current_app.logger.error(e)
                 exist = False
             else:
+                print("---------333___",res)
                 if res == b'-1':
                     exist = False
                 else:
@@ -276,7 +277,8 @@ class UserProfileCache():
             res = None
         #缓存位None，先存入缓存
         if res is None:
-            ret = self._save()
+            ret = self._save(isCache=True)
+            print("------",ret)
             if ret is not None:
                 return True
             else:#数据库不在返回None
@@ -481,9 +483,9 @@ class UserFocusCache():
         cache = []
         #循环构造
         for relation in ret:
-            followings.append(relation.target_user_id)
+            followings.append(str(relation.target_user_id))
             cache.append(relation.utime.timestamp())
-            cache.append(relation.target_user_id)
+            cache.append(str(relation.target_user_id))
         if cache:#缓存部位空，存入redis
             try:
                 pl = self.redis_conn.pipeline()
@@ -497,7 +499,7 @@ class UserFocusCache():
         #被关注人的id
         return followings
 
-    def update(self,target_id,timestamp,incr=1):
+    def update(self,target_id,timestamp,flag=1):
         '''
         及时关注的更新至缓存
         :return:
@@ -505,12 +507,21 @@ class UserFocusCache():
         try:
             TTL = self.redis_conn.ttl(self.key)
             if TTL > constants.ALLOW_UPDATE_FOLLOW_CACHE_TTL_LIMIT:
-                if incr > 0 :
+                #关注用户或者取消关注的标志
+                if flag > 0 :#大于0，表示关注，则新增
                     self.redis_conn.zadd(self.key,timestamp,target_id)
-                else:
+                else:#小于0，表示取消关注，则删除
                     self.redis_conn.zrem(self.key,target_id)
         except RedisError as e:
             current_app.logger.error(e)
+    def isFocus(self,target_id):
+        '''
+        判断是否关注该用户
+        :param target_id:
+        :return:
+        '''
+        followings = self.get()
+        return target_id in followings
 
 class UserFansCache():
     '''
@@ -540,9 +551,9 @@ class UserFansCache():
         cache = []
 
         for f in ret:
-            fans.append(f.user_id)
+            fans.append(str(f.user_id))
             cache.append(f.utime.timestamp())
-            cache.append(f.user_id)
+            cache.append(str(f.user_id))
 
         if cache:
             try:

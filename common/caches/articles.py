@@ -1,6 +1,6 @@
 import json
 
-from flask import current_app
+from flask import current_app,g
 from flask_restful import fields,marshal
 from redis.exceptions import RedisError
 from sqlalchemy.orm import load_only,contains_eager

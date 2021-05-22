@@ -3,7 +3,7 @@ import time
 from flask_restful import Resource, inputs
 from flask_restful.reqparse import RequestParser
 from flask import current_app,g
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError,DatabaseError
 
 from caches.users import UserFocusCache,UserFansCache,UserProfileCache
 from caches.statistics import UserFocusCount,UserFansCount
@@ -79,11 +79,13 @@ class UserFocus(Resource):
             db.session.commit()
         except IntegrityError as e:
             current_app.logger.error(e)
+            db.session.rollback()
             #更新成功返回1，失败返回0
             ret = Relation.query.filter(Relation.user_id == user_id,
                                         Relation.target_user_id == target_id,
                                         Relation.relation != Relation.RELATION.FOLLOW)\
                 .update({'relation': Relation.RELATION.FOLLOW})
+            db.session.commit()
 
         if ret > 0:
             timestamp = time.time()
@@ -94,6 +96,35 @@ class UserFocus(Resource):
             UserFocusCount.incr(user_id)
             UserFansCount.incr(target_id)
         return {"target_id":str(target_id)},201
+    def delete(self):
+        '''
+        取消关注
+        :return:
+        '''
+        user_id = g.user_id
+        # 获取被关注用户id
+        data = RequestParser()
+        data.add_argument('target', type=parsers.checkout_user_id, required=True, location='json')
+        args = data.parse_args()
+        target_id = args.target
+        try:
+            ret = Relation.query.filter(Relation.user_id == g.user_id,
+                                  Relation.target_user_id == target_id,
+                                  Relation.relation == Relation.RELATION.FOLLOW) \
+                .update({'relation': Relation.RELATION.DELETE})
+            db.session.commit()
+        except DatabaseError as e:
+            current_app.logger.error(e)
+            return {"message":"focused user is not exist"},401
+        if ret > 0:
+            timestamp = time.time()
+            # 当前用户增加关注用户
+            UserFocusCache(user_id).update(target_id, timestamp,-1)
+            # 被关注用户增加粉丝
+            UserFansCache(target_id).update(user_id, timestamp,-1)
+            UserFocusCount.incr(user_id,-1)
+            UserFansCount.incr(target_id,-1)
+        return {"message":"success"},201
 
 class UserFans(Resource):
     '''
@@ -133,5 +164,25 @@ class UserFans(Resource):
                 'introductiojn':user.get('introduction'),
                 "mutual_focus": f in focus#判断是否互相关注
             })
-        print(1111111111, res)
         return {"fans":res,"total_num":total_num,"page":page,"page_num":page_num},201
+
+class IsFocusThisUser(Resource):
+    method_decorators = [login_required]
+
+    def get(self):
+        '''
+        判断是否关注
+        :param target_id:
+        :return:
+        '''
+        user_id = g.user_id
+        #获取参数
+        data = RequestParser()
+        #校验参数
+        data.add_argument('target', type=parsers.checkout_user_id, required=True, location='args')
+        args = data.parse_args()
+        target_id = args.target
+        #判断是否关注该用户
+        res = UserFocusCache(user_id).isFocus(target_id)
+
+        return {"isFocusUser":res},201

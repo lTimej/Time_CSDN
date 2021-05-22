@@ -21,3 +21,5 @@ user_api.add_resource(profile.CurrUserProfile,'/v1/curr/user',endpoint='curruser
 user_api.add_resource(focus.UserFocus,'/v1/user/focus',endpoint='focus')
 #用户粉丝
 user_api.add_resource(focus.UserFans,'/v1/user/fans',endpoint='fans')
+#判断是否关注
+user_api.add_resource(focus.IsFocusThisUser,'/v1/isfocus',endpoint='isfocus')
