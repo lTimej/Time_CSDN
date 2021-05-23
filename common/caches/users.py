@@ -160,7 +160,6 @@ class UserProfileCache():
                 current_app.logger.error(e)
                 exist = False
             else:
-                print("---------333___",res)
                 if res == b'-1':
                     exist = False
                 else:
@@ -278,7 +277,6 @@ class UserProfileCache():
         #缓存位None，先存入缓存
         if res is None:
             ret = self._save(isCache=True)
-            print("------",ret)
             if ret is not None:
                 return True
             else:#数据库不在返回None

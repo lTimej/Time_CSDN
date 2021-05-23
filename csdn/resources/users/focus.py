@@ -41,19 +41,20 @@ class UserFocus(Resource):
         page_num = args.page_num if args.page_num else constants.DEFAULT_USER_FOLLOWINGS_PER_PAGE_MIN
         focus = UserFocusCache(user_id).get()
         fans = UserFansCache(user_id).get()
+
         focus_limit = focus[(page-1)*page_num:page*page_num]
         res = []
         total_num = len(focus)
         for f in focus_limit:
             user = UserProfileCache(f).get()
             res.append({
-                'id':f,
+                'user_id':str(f),
+                'flag':"已关注",
                 'user_name':user.get('user_name'),
                 'head_photo':user.get('head_photo'),
-                'introductiojn':user.get('introduction'),
-                'mutual_focus':f in fans
+                'introduction':user.get('introduction'),
+                'mutual_focus':str(f) in fans
             })
-        print(22222222222, res)
         return {"focus":res,"total_num":total_num,"page":page,"page_num":page_num},201
 
     def post(self):
@@ -158,11 +159,12 @@ class UserFans(Resource):
         for f in fans_limit:
             user = UserProfileCache(f).get()
             res.append({
-                'id':f,
+                'user_id':str(f),
+                'flag':"回关",
                 'user_name':user.get('user_name'),
                 'head_photo':user.get('head_photo'),
-                'introductiojn':user.get('introduction'),
-                "mutual_focus": f in focus#判断是否互相关注
+                'introduction':user.get('introduction'),
+                "mutual_focus": int(f) in focus#判断是否互相关注
             })
         return {"fans":res,"total_num":total_num,"page":page,"page_num":page_num},201
 

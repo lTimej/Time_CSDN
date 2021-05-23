@@ -64,7 +64,6 @@ class CurrUserProfile(Resource):
         is_update_userProfileCache = False
         #是否更新用户其他信息缓存
         is_update_userOtherProfileCache = False
-        print(1111,args.head_photo)
         if args.head_photo:#上传照片fdfs
             #{'Group name': 'group1', 'Remote file_id': 'group1/M00/00/00/wKiZgmCWCCCAZZpOAAEwN58xN6E131.png',
             # 'Status': 'Upload successed.', 'Local file name': './t3.png', 'Uploaded size': '76.00KB',
@@ -78,7 +77,6 @@ class CurrUserProfile(Resource):
             else:
                 return {'message': 'Uploading profile photo image failed.'}, 507
         # 存在修改
-        print(args.user_name)
         if args.user_name:
             userProfile['name'] = args.user_name
             user_dict['user_name'] = args.user_name
@@ -140,7 +138,6 @@ class CurrUserProfile(Resource):
             UserProfileCache(g.user_id).clear()
         if is_update_userOtherProfileCache:
             UserOtherProfileCache(g.user_id).clear()
-        print(user_dict)
         return user_dict,201
 
 
