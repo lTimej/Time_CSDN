@@ -6,7 +6,7 @@ from sqlalchemy.orm import load_only, contains_eager
 from sqlalchemy.exc import DatabaseError
 
 from models.user import User,UserProfile,Relation
-from models.news import Article, ArticleContent
+from models.news import Article, ArticleContent,Collection
 
 from . import constants
 
@@ -574,6 +574,82 @@ class UserFansCache():
                     self.redis_conn.zrem(self.key, target_id)
         except RedisError as e:
             current_app.logger.error(e)
+
+class UserCollectionCache():
+    '''
+    用户文章收藏
+    '''
+    def __init__(self,user_id):
+        self.key = "user:article:collection:{}".format(user_id)
+        self.user_id = user_id
+        self.redis_conn = current_app.redis_cluster
+
+    def get_page(self,page,page_num):
+        '''
+        获取当前用户收藏文章的文章id
+        :return:
+        '''
+        #从缓存中获取
+        try:
+            pl = self.redis_conn.pipeline()
+            pl.zcard(self.key)
+            pl.zrevrange(self.key,(page-1)*page_num,page*page_num)
+            total_num,res = pl.execute()
+        except RedisError as e:
+            current_app.logger.error(e)
+            total_num = 0
+            res = []
+
+        if total_num > 0:#缓存存在
+            return total_num,[int(aid) for aid in res]
+        else:#缓存不存在
+            total_num= statistics.ArticleCollectionCount.get(self.user_id)#查询收藏数量
+            if total_num == 0:#为0，则没有收藏股票文章
+                return 0,[]
+            #存在，从数据库中获取
+            try:
+                articles = Collection.query.options(load_only(Collection.article_id,Collection.utime)).filter(Collection.user_id==self.user_id,Collection.is_deleted==False).order_by(Collection.utime.desc()).all()
+            except DatabaseError as e:
+                current_app.logger.error(e)
+                raise e
+            return_res = []
+            cache = []
+            for article in articles:
+                return_res.append(article.article_id)
+                cache.append(article.utime.timestamp())
+                cache.append(article.article_id)
+            #如果cache不为空
+            if cache:
+                try:
+                    pl = self.redis_conn.pipeline()
+                    pl.zadd(self.key, *cache)
+                    pl.expire(self.key, constants.UserArticleCollectionsCacheTTL.get_val())
+                    result = pl.execute()
+                    if result[0] and not result[1]:
+                        self.redis_conn.delete(self.key)
+                except RedisError as e:
+                    current_app.logger.error(e)
+            total_num = len(return_res)
+            res = return_res[(page-1)*page_num:page*page_num]
+            return total_num,res
+    def clear(self):
+        '''
+        清楚文章缓存
+        :return:
+        '''
+        try:
+            self.redis_conn.delete(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
+    def article_exist(self,articl_id):
+        '''
+        判断文章是否存在
+        :return:
+        '''
+        total_num,res = self.get_page(1,-1)
+        return articl_id in res
+
+
 
 
 

@@ -5,6 +5,7 @@ import imghdr
 from models.user import UserProfile
 from utils.md5_pwd import encrypt
 from caches import users as user_cache
+from caches import articles as article_cache
 
 
 def mobile(str_mobile):
@@ -58,7 +59,6 @@ def image_base64(value):
     :param value:
     :return:
     """
-    print(3333,value)
     try:
         photo = base64.b64decode(value)
         file_header = photo[:32]
@@ -157,10 +157,25 @@ def checkout_user_id(value):
         if _user_id <= 0:
             raise ValueError('Invalid target user id.')
         else:
-            print("adkjd",_user_id)
             ret = user_cache.UserProfileCache(_user_id).user_is_exist()
-            print(ret,22222)
             if ret:
                 return _user_id
             else:
                 raise ValueError('Invalid target user id.')
+
+def checkout_article_id(value):
+    print(value,type(value))
+    try:
+        _aid = int(value)
+    except Exception:
+        raise  ValueError("Invalid article id")
+    else:
+        if _aid < 0 :
+            raise ValueError("Invalid article id")
+        else:
+            res = article_cache.ArticlesDetailCache(_aid).exist()
+            print(res)
+            if res:
+                return _aid
+            else:
+                raise ValueError("Invalid article id")

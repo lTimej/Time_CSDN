@@ -70,6 +70,7 @@ class ArticleInfoCache():
         #先从redis中获取
         try:
             res = self.redis_conn.get(self.key)
+            print(res)
         except RedisError as e:
             current_app.logger.error(e)
             res = None
@@ -272,6 +273,28 @@ class ArticlesDetailCache():
             self.redis_conn.delete(self.key)
         except RedisError as e:
             current_app.logger.error(e)
+
+    def exist(self):
+        '''
+        判断文章是否存在
+        :return:
+        '''
+        try:#从缓存中获取
+            res = self.redis_conn.get(self.key)
+        except RedisError as e:#不存在设置位None
+            current_app.logger.error(e)
+            res = None
+        if not res:#不存在，从数据库中获取
+            ret = self.save()
+            if ret:
+                return True
+            else:
+                return False
+        else:#存在先判断是否为-1
+            if res == b'-1':
+                return False
+            else:
+                return True
 
 
 

@@ -1,7 +1,7 @@
 from flask import Blueprint
 from flask_restful import Api
 from utils.output import output_json
-from . import article,chaneels
+from . import article,chaneels,collections
 from ..users import channels as user_channel
 
 article_bp = Blueprint('article',__name__)
@@ -19,5 +19,7 @@ article_api.add_resource(chaneels.GetAllChannel,'/v1/articles/channel',endpoint=
 article_api.add_resource(chaneels.GetDefaultChannel,'/v1/default/channel',endpoint='dchannels')
 #用户频道频道
 article_api.add_resource(user_channel.UserChannelView,'/v1/user/channel',endpoint='anonychannels')
+#用户文章收藏
+article_api.add_resource(collections.CollectionsList,'/v1/article/collection',endpoint='collection')
 
 
