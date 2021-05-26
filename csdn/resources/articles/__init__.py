@@ -21,5 +21,7 @@ article_api.add_resource(chaneels.GetDefaultChannel,'/v1/default/channel',endpoi
 article_api.add_resource(user_channel.UserChannelView,'/v1/user/channel',endpoint='anonychannels')
 #用户文章收藏
 article_api.add_resource(collections.CollectionsList,'/v1/article/collection',endpoint='collection')
+#获取文章浏览状态
+article_api.add_resource(collections.UserArticleStatusJudge,'/v1/article/status',endpoint='status')
 
 

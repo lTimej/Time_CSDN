@@ -603,7 +603,7 @@ class UserCollectionCache():
         if total_num > 0:#缓存存在
             return total_num,[int(aid) for aid in res]
         else:#缓存不存在
-            total_num= statistics.ArticleCollectionCount.get(self.user_id)#查询收藏数量
+            total_num= statistics.UserCollectionCount.get(self.user_id)#查询收藏数量
             if total_num == 0:#为0，则没有收藏股票文章
                 return 0,[]
             #存在，从数据库中获取
@@ -643,7 +643,7 @@ class UserCollectionCache():
             current_app.logger.error(e)
     def article_exist(self,articl_id):
         '''
-        判断文章是否存在
+        判断文章是否被收藏
         :return:
         '''
         total_num,res = self.get_page(1,-1)

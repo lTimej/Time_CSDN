@@ -2,11 +2,13 @@ from flask_restful import Resource, inputs
 from flask import current_app,g
 from flask_restful.reqparse import RequestParser
 
+from models import db
 from utils import parsers
 from utils.decorator import login_required
 from . import constants
+from models.news import Collection
 
-from caches import users,articles
+from caches import users,articles,statistics
 
 class CollectionsList(Resource):
     '''
@@ -36,7 +38,7 @@ class CollectionsList(Resource):
 
         #获取文章收藏id
         total_num,collections = users.UserCollectionCache(user_id).get_page(page,page_num)
-
+        print(collections)
         res = []
         for aid in collections:
             article = articles.ArticlesDetailCache(aid).get()
@@ -54,5 +56,67 @@ class CollectionsList(Resource):
         data.add_argument('aid', type=parsers.checkout_article_id, required=True, location='json')
         args = data.parse_args()
         aid = args.aid
+        ret = 1
+        try:
+            collection = Collection(user_id=user_id, article_id=aid)
+            db.session.add(collection)
+            db.session.commit()
+        except Exception as e:
+            current_app.logger.error(e)
+            db.session.rollback()
+            ret = Collection.query.filter_by(user_id=user_id, article_id=aid, is_deleted=True).update({'is_deleted': False})
+            db.session.commit()
+        if ret > 0:
+            users.UserCollectionCache(user_id).clear()
+            statistics.ArticleCollectionCount.incr(aid)
+            statistics.UserCollectionCount.incr(user_id)
         return {"aid":aid},201
+    def delete(self):
+        '''
+        取消收藏
+        :return:
+        '''
+        user_id = g.user_id
+        # 获取被收藏的文章id
+        data = RequestParser()
+        data.add_argument('aid', type=parsers.checkout_article_id, required=True, location='json')
+        args = data.parse_args()
+        aid = args.aid
+        try:
+            ret = Collection.query.filter(Collection.user_id==user_id,Collection.article_id==aid,Collection.is_deleted==False).update({'is_deleted': True})
+            db.session.commit()
+        except Exception as e:
+            current_app.logger.error(e)
+            return {"message": "collection user is not exist"}, 401
+        if ret > 0:
+            users.UserCollectionCache(user_id).clear()
+            statistics.ArticleCollectionCount.incr(aid,-1)
+            statistics.UserCollectionCount.incr(user_id,-1)
+        return {"message":"ok"},201
+
+class UserArticleStatusJudge(Resource):
+    '''
+    判断当前用户对文章的浏览状态，比如是否关注，是否收藏，是否点赞
+    '''
+    def get(self):
+        '''
+        获取判断是否存在信息
+        :return:
+        '''
+        user_id = g.user_id
+        data = RequestParser()
+        data.add_argument('aid', type=parsers.checkout_article_id, required=True, location='args')
+        data.add_argument('uid', type=parsers.checkout_user_id, required=True, location='args')
+        args = data.parse_args()
+        aid = args.aid
+        uid = args.uid
+        if user_id:#已登录
+            isfocus = users.UserFocusCache(user_id).isFocus(uid)
+            iscollection = users.UserCollectionCache(user_id).article_exist(aid)
+        else:#未登录
+            isfocus = False
+            iscollection = False
+        collection_num = statistics.ArticleCollectionCount.get(aid)
+        return {"isfocus":isfocus,"iscollection":iscollection,"collection_num":collection_num,"aid":aid},201
+
 
