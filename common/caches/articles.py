@@ -10,7 +10,7 @@ from caches import statistics as article_statistics
 from caches import users as user_cache
 
 from caches import constants
-from models.news import Article,ArticleContent
+from models.news import Article,ArticleContent,Attitude
 '''
 文章缓存
 '''
@@ -295,6 +295,50 @@ class ArticlesDetailCache():
                 return False
             else:
                 return True
+
+class ArticleLikeCache():
+    '''
+    当前文章的点赞缓存
+    '''
+    def __init__(self,user_id,aid):
+        self.key = "user:{}:article:{}:like".format(user_id,aid)
+        self.user_id = user_id
+        self.aid = aid
+        self.redis_conn = current_app.cluster
+    def get(self):
+        '''
+        获取文章点赞缓存
+        :return:
+        '''
+        try:
+            res = self.redis_conn.get(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
+            res = None
+        if res :
+            return int(res)
+        try:
+            res = Attitude.query.options(load_only(Attitude.attitude)).filter(Attitude.user_id==self.user_id,Attitude.article_id==self.aid).all()
+        except DatabaseError as e:
+            current_app.logger.error(e)
+            raise e
+        attitude = res.attitude if res and res.attitude else -1
+        try:
+            self.redis_conn.setex(self.key, constants.ArticleUserNoAttitudeCacheTTL.get_val(), int(attitude))
+        except RedisError as e:
+            current_app.logger.error(e)
+
+        return attitude
+
+    def clear(self):
+        """
+        清除
+        :return:
+        """
+        try:
+            self.redis_conn.delete(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
 
 
 

@@ -195,6 +195,7 @@ class ArticleCollectionCount(CountStorageBase):
     @staticmethod
     def db_query():
         return db.session.query(Collection.article_id,func.count(Collection.article_id)).filter(Collection.is_deleted==0).group_by(Collection.article_id).all()
+
 class UserCollectionCount(CountStorageBase):
     '''
     用户收藏量

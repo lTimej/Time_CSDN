@@ -6,7 +6,7 @@ from sqlalchemy.orm import load_only, contains_eager
 from sqlalchemy.exc import DatabaseError
 
 from models.user import User,UserProfile,Relation
-from models.news import Article, ArticleContent,Collection
+from models.news import Article, ArticleContent,Collection,Attitude
 
 from . import constants
 
@@ -648,6 +648,75 @@ class UserCollectionCache():
         '''
         total_num,res = self.get_page(1,-1)
         return articl_id in res
+
+class UserArticleAttitudeCache():
+    '''
+    用户对文章的态度
+    '''
+    def __init__(self,user_id):
+        self.key = "user:article:attitude:{}".format(user_id)
+        self.user_id = user_id
+        self.redis_conn = current_app.redis_cluster
+    def get(self):
+        '''
+        获取用户态度缓存
+        :return:
+        '''
+        #从缓存中获取
+        try:
+            res = self.redis_conn.get(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
+            res = None
+        if res:
+            if res == b'-1':
+                return None
+            else:
+                return {int(aid): int(attitude) for aid, attitude in res.items()}
+        try:
+            attitude = Attitude.query.options(load_only(Attitude.article_id,Attitude.attitude)).filter(Attitude.user_id==self.user_id,Attitude.attitude!=None).all()
+        except DatabaseError as e:
+            current_app.logger.error(e)
+            raise e
+        attitudes = {}
+        for atti in attitude:
+            attitudes[atti.article_id] = atti.attitude
+
+        try:
+            pl = self.redis_conn.pipeline()
+            if attitudes:
+                pl.hmset(self.key,attitudes)
+                pl.expire(self.key,constants.UserArticleAttitudeCacheTTL.get_val())
+            else:
+                pl.hmset(self.key,-1)
+                pl.expire(self.key,constants.UserArticleAttitudeNotExistsCacheTTL.get_val())
+            results = pl.execute()
+            if results[0] and not results[1]:
+                self.redis_conn.delete(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
+        return attitudes
+
+    def clear(self):
+        """
+        清除
+        """
+        try:
+            self.redis_conn.delete(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
+
+    def exist(self,aid):
+        '''
+        判断当前用户是否对这篇文章点赞
+        :return:
+        '''
+        attitude = self.get()
+        ret = attitude.get(aid,-1)
+        return ret == Attitude.ATTITUDE.LIKING
+
+
+
 
 
 

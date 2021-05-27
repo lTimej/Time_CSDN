@@ -116,7 +116,14 @@ class UserArticleStatusJudge(Resource):
         else:#未登录
             isfocus = False
             iscollection = False
+        #这篇文章被收藏多少次
         collection_num = statistics.ArticleCollectionCount.get(aid)
-        return {"isfocus":isfocus,"iscollection":iscollection,"collection_num":collection_num,"aid":aid},201
+        context= {
+            "isfocus":isfocus,
+            "iscollection":iscollection,
+            "collection_num":collection_num,
+            "aid":aid
+        }
+        return context,201
 
 
