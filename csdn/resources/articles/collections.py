@@ -113,15 +113,20 @@ class UserArticleStatusJudge(Resource):
         if user_id:#已登录
             isfocus = users.UserFocusCache(user_id).isFocus(uid)
             iscollection = users.UserCollectionCache(user_id).article_exist(aid)
+            islike = users.UserArticleAttitudeCache(user_id).exist(aid)
         else:#未登录
             isfocus = False
             iscollection = False
+            islike = False
         #这篇文章被收藏多少次
         collection_num = statistics.ArticleCollectionCount.get(aid)
+        like_num = statistics.ArticleLikeCount.get(aid)
         context= {
             "isfocus":isfocus,
             "iscollection":iscollection,
+            "islike":islike,
             "collection_num":collection_num,
+            "like_num":like_num,
             "aid":aid
         }
         return context,201

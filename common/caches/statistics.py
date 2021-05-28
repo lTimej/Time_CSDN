@@ -187,6 +187,18 @@ class ArticleLikeCount(CountStorageBase):
     def db_query():
         return db.session.query(Attitude.article_id,func.count(Attitude.article_id)).filter(Attitude.attitude==Attitude.ATTITUDE.LIKING).group_by(Attitude.article_id).all()
 
+class UserArticleLikeCount(CountStorageBase):
+    '''
+    用户文章点赞数
+    '''
+    key = "user:article:like:count"
+    @staticmethod
+    def db_query():
+        ret = db.session.query(Article.user_id, func.count(Attitude.id)).join(Attitude.article) \
+            .filter(Attitude.attitude == Attitude.ATTITUDE.LIKING) \
+            .group_by(Article.user_id).all()
+        return ret
+
 class ArticleCollectionCount(CountStorageBase):
     '''
     文章收藏量

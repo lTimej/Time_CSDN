@@ -660,37 +660,39 @@ class UserArticleAttitudeCache():
     def get(self):
         '''
         获取用户态度缓存
+        哈希存储
+        key :   {user_id:1}
         :return:
         '''
         #从缓存中获取
         try:
-            res = self.redis_conn.get(self.key)
+            res = self.redis_conn.hgetall(self.key)
         except RedisError as e:
             current_app.logger.error(e)
             res = None
-        if res:
+        if res:#{b'4': b'True'}
             if res == b'-1':
-                return None
+                return {}
             else:
-                return {int(aid): int(attitude) for aid, attitude in res.items()}
+                return {int(aid): int(eval(attitude)) for aid, attitude in res.items()}
         try:
-            attitude = Attitude.query.options(load_only(Attitude.article_id,Attitude.attitude)).filter(Attitude.user_id==self.user_id,Attitude.attitude!=None).all()
+            attitude = Attitude.query.options(load_only(Attitude.article_id,Attitude.attitude)).filter(Attitude.user_id==self.user_id,Attitude.attitude==Attitude.ATTITUDE.LIKING).all()
         except DatabaseError as e:
             current_app.logger.error(e)
             raise e
         attitudes = {}
         for atti in attitude:
             attitudes[atti.article_id] = atti.attitude
-
+        print(attitudes,"-------dsd------------")
         try:
             pl = self.redis_conn.pipeline()
             if attitudes:
                 pl.hmset(self.key,attitudes)
                 pl.expire(self.key,constants.UserArticleAttitudeCacheTTL.get_val())
             else:
-                pl.hmset(self.key,-1)
+                pl.hmset(self.key,{-1:-1})
                 pl.expire(self.key,constants.UserArticleAttitudeNotExistsCacheTTL.get_val())
-            results = pl.execute()
+            results = pl.execute()# [True,True]
             if results[0] and not results[1]:
                 self.redis_conn.delete(self.key)
         except RedisError as e:
@@ -712,8 +714,9 @@ class UserArticleAttitudeCache():
         :return:
         '''
         attitude = self.get()
-        ret = attitude.get(aid,-1)
-        return ret == Attitude.ATTITUDE.LIKING
+        ret = attitude.get(aid,False)
+        print(attitude,"99999999999988899999999999999",ret,"77777",Attitude.ATTITUDE.LIKING)
+        return ret
 
 
 

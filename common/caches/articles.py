@@ -304,7 +304,7 @@ class ArticleLikeCache():
         self.key = "user:{}:article:{}:like".format(user_id,aid)
         self.user_id = user_id
         self.aid = aid
-        self.redis_conn = current_app.cluster
+        self.redis_conn = current_app.redis_cluster
     def get(self):
         '''
         获取文章点赞缓存

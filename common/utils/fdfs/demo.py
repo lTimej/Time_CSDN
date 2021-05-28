@@ -30,5 +30,4 @@ import time
 # # ll = 1391913696153829376
 # # c = ll in l
 # # print(c)
-b = 1 if 2 else -1
-print(b)
+print(-1==True)
