@@ -70,7 +70,6 @@ class ArticleInfoCache():
         #先从redis中获取
         try:
             res = self.redis_conn.get(self.key)
-            print(res)
         except RedisError as e:
             current_app.logger.error(e)
             res = None

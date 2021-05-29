@@ -714,7 +714,7 @@ class UserArticleAttitudeCache():
         '''
         attitude = self.get()
         ret = attitude.get(aid,False)
-        return ret
+        return True if ret == 1 else ret
 
 class UserArticleReadCache():
     '''
@@ -743,7 +743,7 @@ class UserArticleReadCache():
             raise e
         reads = {}
         for r in ret:
-            reads[self.user_id] = r.article_id
+            reads[r.article_id] = True
         try:
             pl = self.redis_conn.pipeline()
             if reads:
@@ -771,11 +771,11 @@ class UserArticleReadCache():
 
     def exist(self,aid):
         res = self.get()
-        article_id = res.get(self.user_id,-1)
-        if article_id == -1:
-            return True
-        else:
+        flag = res.get(aid,-1)
+        if flag is True:
             return False
+        else:
+            return True
 
 
 

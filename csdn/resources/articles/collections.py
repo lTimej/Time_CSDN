@@ -38,7 +38,6 @@ class CollectionsList(Resource):
 
         #获取文章收藏id
         total_num,collections = users.UserCollectionCache(user_id).get_page(page,page_num)
-        print(collections)
         res = []
         for aid in collections:
             article = articles.ArticlesDetailCache(aid).get()
@@ -121,12 +120,14 @@ class UserArticleStatusJudge(Resource):
         #这篇文章被收藏多少次
         collection_num = statistics.ArticleCollectionCount.get(aid)
         like_num = statistics.ArticleLikeCount.get(aid)
+        read_num = statistics.ArticleReadCount.get(aid)
         context= {
             "isfocus":isfocus,
             "iscollection":iscollection,
             "islike":islike,
             "collection_num":collection_num,
             "like_num":like_num,
+            "read_num":read_num,
             "aid":aid
         }
         return context,201

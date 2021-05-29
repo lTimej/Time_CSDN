@@ -11,7 +11,6 @@ from utils.decorator import login_required
 
 from caches import users,articles,statistics
 
-
 class ArticleUserLikeCountView(Resource):
     '''
     文章点赞数

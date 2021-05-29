@@ -13,7 +13,7 @@ class ArticleReadingView(Resource):
     '''
     文章阅读信息
     '''
-    method_decorators = [login_required]
+
     def post(self):
         user_id = g.user_id
         # 获取被收藏的文章id
@@ -21,19 +21,17 @@ class ArticleReadingView(Resource):
         data.add_argument('aid', type=parsers.checkout_article_id, required=True, location='json')
         args = data.parse_args()
         aid = args.aid
-        flag = users.UserArticleReadCache(user_id).exist(aid)
-        if flag:
-            try:
-                read = Read(user_id = user_id,article_id=aid)
-                db.session.add(read)
-                db.session.commit()
-            except Exception as e:
-                current_app.logger.error(e)
-                db.session.rollback()
-                return {"message":"data is exist"},401
-
-            users.UserArticleReadCache(user_id).clear()
-            statistics.ArticleReadCount.incr(aid,1)
+        if user_id:
+            flag = users.UserArticleReadCache(user_id).exist(aid)
+            if flag:
+                try:
+                    read = Read(user_id=user_id, article_id=aid)
+                    db.session.add(read)
+                    db.session.commit()
+                except Exception as e:
+                    current_app.logger.error(e)
+                    db.session.rollback()
+                    return {"message": "data is exist"}, 401
+                users.UserArticleReadCache(user_id).clear()
+                statistics.ArticleReadCount.incr(aid, 1)
         return {"message":"OK"},201
-
-
