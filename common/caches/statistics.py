@@ -4,7 +4,7 @@ from redis.exceptions import RedisError
 from sqlalchemy import func
 
 from models.user import Relation,Visitors
-from models.news import Article,ArticleStatistic,Comment,Collection,CommentLiking,Attitude
+from models.news import Article,ArticleStatistic,Comment,Collection,CommentLiking,Attitude,Read
 from models import db
 
 class CountStorageBase(object):

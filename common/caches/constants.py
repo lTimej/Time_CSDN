@@ -247,3 +247,18 @@ class AnnouncementNotExistsCacheTTL(BaseCacheTTL):
     """
     TTL = 5 * 60
     MAX_DELTA = 60
+
+class UserArticleReadCacheTTL(BaseCacheTTL):
+    """
+    评论信息缓存时间，秒
+    """
+    TTL = 30 * 60
+
+
+class UserArticleReadNotExistsCacheTTL(BaseCacheTTL):
+    """
+    评论不存在结果缓存
+    为解决缓存击穿，有效期不宜过长
+    """
+    TTL = 5 * 60
+    MAX_DELTA = 60

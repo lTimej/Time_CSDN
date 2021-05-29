@@ -1,7 +1,7 @@
 from flask import Blueprint
 from flask_restful import Api
 from utils.output import output_json
-from . import article,chaneels,collections,likes
+from . import article,chaneels,collections,likes,reads
 from ..users import channels as user_channel
 
 article_bp = Blueprint('article',__name__)
@@ -25,5 +25,7 @@ article_api.add_resource(collections.CollectionsList,'/v1/article/collection',en
 article_api.add_resource(collections.UserArticleStatusJudge,'/v1/article/status',endpoint='status')
 #文章点赞
 article_api.add_resource(likes.ArticleUserLikeCountView,'/v1/article/likes',endpoint='likes')
+#文章阅读
+article_api.add_resource(reads.ArticleReadingView,'/v1/article/reads',endpoint='reads')
 
 

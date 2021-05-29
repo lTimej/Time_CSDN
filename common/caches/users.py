@@ -6,7 +6,7 @@ from sqlalchemy.orm import load_only, contains_eager
 from sqlalchemy.exc import DatabaseError
 
 from models.user import User,UserProfile,Relation
-from models.news import Article, ArticleContent,Collection,Attitude
+from models.news import Article, ArticleContent, Collection, Attitude, Read
 
 from . import constants
 
@@ -683,7 +683,6 @@ class UserArticleAttitudeCache():
         attitudes = {}
         for atti in attitude:
             attitudes[atti.article_id] = atti.attitude
-        print(attitudes,"-------dsd------------")
         try:
             pl = self.redis_conn.pipeline()
             if attitudes:
@@ -715,8 +714,68 @@ class UserArticleAttitudeCache():
         '''
         attitude = self.get()
         ret = attitude.get(aid,False)
-        print(attitude,"99999999999988899999999999999",ret,"77777",Attitude.ATTITUDE.LIKING)
         return ret
+
+class UserArticleReadCache():
+    '''
+    用户阅读记录
+    '''
+    def __init__(self,user_id):
+        self.key = "user:{}:read".format(user_id)
+        self.user_id = user_id
+        self.redis_conn = current_app.redis_cluster
+
+    def get(self):
+        try:
+            res = self.redis_conn.hgetall(self.user_id)
+        except RedisError as e:
+            current_app.logger.error(e)
+            res = {}
+        if res:
+            if res == b'-1':
+                return {}
+            else:
+                return {int(aid):int(eval(isRead)) for aid,isRead in res.items()}
+        try:
+            ret = Read.query.options(load_only(Read.article_id)).filter(Read.user_id==self.user_id).all()
+        except DatabaseError as e:
+            current_app.logger.error(e)
+            raise e
+        reads = {}
+        for r in ret:
+            reads[self.user_id] = r.article_id
+        try:
+            pl = self.redis_conn.pipeline()
+            if reads:
+                pl.hmset(self.key,reads)
+                pl.expire(self.key,constants.UserArticleReadCacheTTL.get_val())
+            else:
+                pl.hmset(self.key,-1,-1)
+                pl.expire(self.key,constants.UserArticleReadNotExistsCacheTTL.get_val())
+            results = pl.execute()  # [True,True]
+            if results[0] and not results[1]:
+                self.redis_conn.delete(self.key)
+        except Exception as e:
+            current_app.logger.error(e)
+
+        return reads
+
+    def clear(self):
+        """
+        清除
+        """
+        try:
+            self.redis_conn.delete(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
+
+    def exist(self,aid):
+        res = self.get()
+        article_id = res.get(self.user_id,-1)
+        if article_id == -1:
+            return True
+        else:
+            return False
 
 
 

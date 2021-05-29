@@ -1,6 +1,7 @@
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 from flask import current_app,g
+from sqlalchemy.orm import load_only
 
 from models import db
 from models.news import Attitude
@@ -36,6 +37,7 @@ class ArticleUserLikeCountView(Resource):
             current_app.logger.error(e)
             db.session.rollback()
             res = Attitude.query.filter(Attitude.user_id==user_id,Attitude.article_id==aid,Attitude.attitude==Attitude.ATTITUDE.DISLIKE).update({"attitude":Attitude.ATTITUDE.LIKING})
+            db.session.commit()
         if res > 0:
             users.UserArticleAttitudeCache(user_id).clear()
             articles.ArticleLikeCache(user_id,aid).clear()
