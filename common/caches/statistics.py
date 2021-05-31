@@ -169,7 +169,7 @@ class ArticleCommentResponseCount(CountStorageBase):
     def db_query():
         return db.session.query(Comment.parent_id,func.count(Comment.id)).filter(Comment.status==Comment.STATUS.APPROVED,Comment.parent_id!=None).group_by(Comment.parent_id).all()
 
-class ArticleCommentResponseLikeCount(CountStorageBase):
+class ArticleCommentLikeCount(CountStorageBase):
     '''
     文章评论点赞数
     '''

@@ -41,7 +41,6 @@ class GetSmsCode(Resource):
         '''
         #随机生成6位验证码
         sms_code = '{:0>6d}'.format(random.randint(0, 999999))
-        print(sms_code)
         #保存之redis
         try:
             current_app.redis_master.setex("app:code:{}".format(mobile),constants.SMS_VERIFICATION_CODE_EXPIRES, sms_code)

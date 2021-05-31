@@ -73,7 +73,6 @@ class UserChannelView(Resource):
                 flag = UserArticleChannel(g.user_id).exist(channel.get('id'))
                 #如果不存在
                 if not flag:
-                    print(111111111111111)
                     #保存数据库
                     self._save(channel)
                     user_channels.append(channel)
