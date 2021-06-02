@@ -201,7 +201,7 @@ class ArticlesDetailCache():
         '''
         #从数据库中获取
         try:#获取文章内容，及文章其他相关数据
-            detail = Article.query.join(Article.content).options(load_only(Article.title,Article.user_id,Article.ctime,Article.id,Article.channel_id),contains_eager(Article.content).load_only(ArticleContent.content)).filter(Article.id==self.article_id,Article.status==Article.STATUS.DRAFT).first()
+            detail = Article.query.join(Article.content).options(load_only(Article.title,Article.user_id,Article.ctime,Article.id,Article.channel_id,Article.allow_comment),contains_eager(Article.content).load_only(ArticleContent.content)).filter(Article.id==self.article_id,Article.status==Article.STATUS.DRAFT).first()
         except DatabaseError as e:
             current_app.logger.error(e)
             raise e
@@ -212,7 +212,8 @@ class ArticlesDetailCache():
             'create_time':str(detail.ctime)[:str(detail.ctime).find(' ')],
             'art_id':detail.id,
             'channel_id':detail.channel_id,
-            'content':detail.content.content
+            'content':detail.content.content,
+            'allow_comment':detail.allow_comment
         }
         # 获取文章作者相关信息
         user = user_cache.UserProfileCache(detail_dict.get('user_id')).get()
@@ -229,7 +230,6 @@ class ArticlesDetailCache():
 
         #响应数据
         return detail_dict
-
     def get(self):
         '''
         获取文章详情
@@ -262,7 +262,6 @@ class ArticlesDetailCache():
         detail_dict['like_num'] = article_statistics.ArticleLikeCount.get(self.article_id)
         detail_dict['collection_num'] = article_statistics.ArticleCollectionCount.get(self.article_id)
         return detail_dict
-
     def clear(self):
         '''
         清楚缓存
@@ -272,7 +271,6 @@ class ArticlesDetailCache():
             self.redis_conn.delete(self.key)
         except RedisError as e:
             current_app.logger.error(e)
-
     def exist(self):
         '''
         判断文章是否存在
@@ -294,6 +292,18 @@ class ArticlesDetailCache():
                 return False
             else:
                 return True
+    def is_allow_comment(self):
+        '''
+        判断是否允许评论
+        :return:
+        '''
+        articles = self.get()
+        if articles:
+            res = articles
+        else:
+            res = self.save()
+        return res.get("allow_comment")
+
 
 class ArticleLikeCache():
     '''

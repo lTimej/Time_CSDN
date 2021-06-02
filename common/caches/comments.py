@@ -44,6 +44,7 @@ class CommentCache():
         comment_dict['like_num'] = statistics.ArticleCommentLikeCount.get(comment_dict.get('comment_id'))
         comment_dict['comment_response_num'] = statistics.ArticleCommentResponseCount.get(comment_dict.get('comment_id'))
         return comment_dict
+
     def save(self,comment=None):
         '''
         缓存文章评论
@@ -56,8 +57,8 @@ class CommentCache():
             return None
         else:#数据库存在，存入缓存中
             comment_dict = {
-                "comment_id":comment.id,
-                "ctime":comment.ctime,
+                "comment_id":str(comment.id),
+                "ctime":str(comment.ctime),
                 "author_id":comment.user_id,
                 "is_top":comment.is_top,
                 "content":comment.content
@@ -67,7 +68,8 @@ class CommentCache():
             except RedisError as e:
                 current_app.logger.error(e)
             return comment_dict
-    def exist(self,comment_id):
+
+    def exist(self):
         '''
         判断缓存是否存在
         :param comment_id:
@@ -83,6 +85,14 @@ class CommentCache():
                 return False
             else:
                 return True
+    # def user_is_comment(self,user_id):
+    #     '''
+    #     判断用户是否评论过
+    #     :return:
+    #     '''
+    #     res = self.get()
+    #
+
     def clear(self):
         '''
         清除缓存
@@ -92,6 +102,7 @@ class CommentCache():
             self.redis_conn.delete(self.key)
         except RedisError as e:
             current_app.logger.error(e)
+
     @classmethod
     def get_list(cls,comment_id):
         '''
@@ -99,32 +110,34 @@ class CommentCache():
         :param comment_id:
         :return:
         '''
-        query = []
+        query_list = []
         return_data = []
         comments_dict = {}
         for cid in comment_id:
             comment = CommentCache(cid).get()
+            # print("====-------22288----",comment)
             if comment:#存在，加入返回数据列表
                 comments_dict[cid] = comment
                 return_data.append(comment)
             if not comment:
-                query.append(cid)
-        if not query:#不需要查查询数据库，直接返回
+                query_list.append(cid)
+        if not query_list:#不需要查查询数据库，直接返回
             return return_data
         else:
-            res = Comment.query.filter(Comment.id in query,Comment.status==Comment.STATUS.APPROVED).all()
+            res = Comment.query.filter(Comment.id.in_(query_list),Comment.status==Comment.STATUS.APPROVED).all()
             pl = current_app.redis_cluster.pipeline()
+            # print(7777777777777777777777,res)
             for comment in res:
                 comment_dict = {
                     "comment_id": comment.id,
-                    "ctime": comment.ctime,
+                    "ctime": str(comment.ctime),
                     "author_id": comment.user_id,
                     "is_top": comment.is_top,
                     "content": comment.content
                 }
                 pl.setex(CommentCache(comment.id).key,constants.CommentCacheTTL.get_val(),json.dumps(comment_dict))
                 comment_dict = cls.add_fields(comment_dict)
-                comments_dict[comment_dict.id] = comment_dict
+                comments_dict[comment.id] = comment_dict
             try:
                 pl.execute()
             except RedisError as e:
@@ -169,6 +182,7 @@ class ArticleCommentBaseCache():
         :return:
         """
         return 0
+
     def get_page(self,offset,limit):
         '''
         分页获取
@@ -184,10 +198,12 @@ class ArticleCommentBaseCache():
             if offset is None:#从头到尾 返回有序集 key 中，指定区间内的成员
                 pl.zrevrange(self.key,0,limit-1,withscores=True)# ZREVRANGE key start stop [WITHSCORES]
             else:# ZREVRANGEBYSCORE key max min [WITHSCORES] [LIMIT offset count]
+                # print("进来了")
                 pl.zrevrangebyscore(self.key,offset-1,0,0,limit-1,withscores=True)
             total_num,end_id,res = pl.execute()
+            # print("进来了",total_num)
         except Exception as e:
-            current_app.logger.error()
+            current_app.logger.error(e)
             total_num = 0
             end_id = None
             last_id = None
@@ -202,12 +218,15 @@ class ArticleCommentBaseCache():
         if total_num  == 0:
             return 0,None,None,[]
         #只加载指定数据
+        # print("进来了",total_num)
         query = Comment.query.options(load_only(Comment.id, Comment.ctime, Comment.is_top))
         #过滤
         query = self._db_query_filter(query)
         #按指定降序排序
+        # print("query++++++",query)
         ret = query.order_by(Comment.is_top.desc(), Comment.id.desc()).all()
-
+        # for i in ret:
+        #     print("//////////////",i.content)
         cache = []
         page_comments = []
         page_count = 0
@@ -216,11 +235,13 @@ class ArticleCommentBaseCache():
 
         for comment in ret:
             score = comment.ctime.timestamp()
+            # print("1112222",score)
             if comment.is_top:
                 score += constants.COMMENTS_CACHE_MAX_SCORE
-
+            # print("1112222", score,comment.is_top,offset,page_count,limit)
             # 构造返回数据
             if ((offset is not None and score < offset) or offset is None) and page_count <= limit:
+                # print("hello---------",comment.id)
                 page_comments.append(comment.id)
                 page_count += 1
                 page_last_comment = comment
@@ -244,6 +265,7 @@ class ArticleCommentBaseCache():
             except RedisError as e :
                 current_app.logger.error(e)
         return total_count , end_id , last_id , page_comments
+
     def add(self,comment) :
         '''
         添加评论
@@ -256,6 +278,7 @@ class ArticleCommentBaseCache():
                 self.redis_conn.zadd(self.key,score,comment.id)
         except RedisError as e:
             current_app.logger.error(e)
+
     def clear(self):
         try:
             self.redis_conn.delete(self.key)
@@ -286,6 +309,7 @@ class ArticleCommentCache(ArticleCommentBaseCache):
         数据库查询条件
         :return:
         """
+        # print("进入子查询",self.id_value)
         return query.filter(Comment.article_id==self.id_value,Comment.status==Comment.STATUS.APPROVED,Comment.parent_id==None)
 
     def _get_cache_ttl(self):
