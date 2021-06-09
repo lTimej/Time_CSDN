@@ -11,7 +11,7 @@ from . import constants
 
 class CommentCache():
     '''
-    评论信息
+    评论信息,根据comment_idhu缓存
     '''
     def __init__(self,comment_id):
         self.key = "comment:{}".format(comment_id)
@@ -46,20 +46,22 @@ class CommentCache():
         return comment_dict
 
     def save(self,comment=None):
+
         '''
         缓存文章评论
-        :param comment:
+        :param comment:当前评论数据对象
         :return:
         '''
         if comment is None:#保存缓存
-            comment = Comment.query.filter(Comment.id==self.comment_id,Comment.status==Comment.STATUS.APPROVED).all()
+            comment = Comment.query.filter(Comment.id==self.comment_id,Comment.status==Comment.STATUS.APPROVED).first()
         if comment is None:#数据库不存在返回NOne
             return None
         else:#数据库存在，存入缓存中
             comment_dict = {
                 "comment_id":str(comment.id),
+                "parent_comment_id":str(comment.parent_id),
                 "ctime":str(comment.ctime),
-                "author_id":comment.user_id,
+                "author_id":str(comment.user_id),
                 "is_top":comment.is_top,
                 "content":comment.content
             }
@@ -76,6 +78,16 @@ class CommentCache():
         :return:
         '''
         res = self.get()
+        '''
+        comment_dict = {
+                "comment_id":str(comment.id),
+                "parent_comment_id":str(comment.parent_id),
+                "ctime":str(comment.ctime),
+                "author_id":comment.user_id,
+                "is_top":comment.is_top,
+                "content":comment.content
+            }
+        '''
         if res:
             return False if res == b'-1'  else True
         else:
@@ -129,7 +141,8 @@ class CommentCache():
             # print(7777777777777777777777,res)
             for comment in res:
                 comment_dict = {
-                    "comment_id": comment.id,
+                    "comment_id": str(comment.id),
+                    "parent_comment_id":str(comment.parent_id),
                     "ctime": str(comment.ctime),
                     "author_id": comment.user_id,
                     "is_top": comment.is_top,
@@ -147,13 +160,14 @@ class CommentCache():
                 return_data.append(comments_dict.get(cid))
             return return_data
 
-class ArticleCommentBaseCache():
+class ArticleCommentBaseCache(object):
     '''
     某篇文章评论父类
     '''
     def __init__(self,id_value):
+        print()
         self.id_value = id_value
-        self.key = self._set_key
+        self.key = self._set_key()
         self.redis_conn = current_app.redis_cluster
 
     def _set_key(self):
@@ -186,7 +200,7 @@ class ArticleCommentBaseCache():
     def get_page(self,offset,limit):
         '''
         分页获取
-        :param offset: 偏移量
+        :param offset: 偏移量，时间戳形式
         :param limit: 限制几条
         :return:评论 id
         '''
@@ -198,10 +212,8 @@ class ArticleCommentBaseCache():
             if offset is None:#从头到尾 返回有序集 key 中，指定区间内的成员
                 pl.zrevrange(self.key,0,limit-1,withscores=True)# ZREVRANGE key start stop [WITHSCORES]
             else:# ZREVRANGEBYSCORE key max min [WITHSCORES] [LIMIT offset count]
-                # print("进来了")
                 pl.zrevrangebyscore(self.key,offset-1,0,0,limit-1,withscores=True)
             total_num,end_id,res = pl.execute()
-            # print("进来了",total_num)
         except Exception as e:
             current_app.logger.error(e)
             total_num = 0
@@ -209,6 +221,7 @@ class ArticleCommentBaseCache():
             last_id = None
             res = []
         if total_num > 0:#缓存存在
+            print(res,"-------------------->>>>")
             end_id = int(end_id[0][1])
             # ret -> [(value, score)...] [(comment_id,score)]
             last_id = int(res[-1][1]) if res else None
@@ -218,15 +231,11 @@ class ArticleCommentBaseCache():
         if total_num  == 0:
             return 0,None,None,[]
         #只加载指定数据
-        # print("进来了",total_num)
-        query = Comment.query.options(load_only(Comment.id, Comment.ctime, Comment.is_top))
+        query = Comment.query.options(load_only(Comment.id,Comment.parent_id, Comment.ctime, Comment.is_top))
         #过滤
         query = self._db_query_filter(query)
         #按指定降序排序
-        # print("query++++++",query)
         ret = query.order_by(Comment.is_top.desc(), Comment.id.desc()).all()
-        # for i in ret:
-        #     print("//////////////",i.content)
         cache = []
         page_comments = []
         page_count = 0
@@ -235,13 +244,10 @@ class ArticleCommentBaseCache():
 
         for comment in ret:
             score = comment.ctime.timestamp()
-            # print("1112222",score)
             if comment.is_top:
                 score += constants.COMMENTS_CACHE_MAX_SCORE
-            # print("1112222", score,comment.is_top,offset,page_count,limit)
             # 构造返回数据
             if ((offset is not None and score < offset) or offset is None) and page_count <= limit:
-                # print("hello---------",comment.id)
                 page_comments.append(comment.id)
                 page_count += 1
                 page_last_comment = comment
@@ -268,7 +274,7 @@ class ArticleCommentBaseCache():
 
     def add(self,comment) :
         '''
-        添加评论
+        添加评论id
         :return:
         '''
         try :
@@ -284,40 +290,6 @@ class ArticleCommentBaseCache():
             self.redis_conn.delete(self.key)
         except RedisError as e:
             current_app.logger.error(e)
-
-class ArticleCommentCache(ArticleCommentBaseCache):
-    '''
-    文章评论
-    '''
-
-    def _set_key(self):
-        """
-        设置缓存键
-        """
-        return "article:comment:{}".format(self.id_value)
-
-    def _get_total_count(self):
-        """
-        获取总量
-        :return:
-        """
-        count = statistics.ArticleCommentCount.get(self.id_value)
-        return count
-
-    def _db_query_filter(self, query):
-        """
-        数据库查询条件
-        :return:
-        """
-        # print("进入子查询",self.id_value)
-        return query.filter(Comment.article_id==self.id_value,Comment.status==Comment.STATUS.APPROVED,Comment.parent_id==None)
-
-    def _get_cache_ttl(self):
-        """
-        获取缓存有效期
-        :return:
-        """
-        return constants.ArticleCommentsCacheTTL.get_val()
 
 class ArticleCommentResponseCache(ArticleCommentBaseCache):
     '''
@@ -343,7 +315,9 @@ class ArticleCommentResponseCache(ArticleCommentBaseCache):
         数据库查询条件
         :return:
         """
-        return query.filter(Comment.article_id==self.id_value,Comment.status==Comment.STATUS.APPROVED)
+        print("子查询response",query)
+        return query.filter(Comment.parent_id == self.id_value,
+                            Comment.status == Comment.STATUS.APPROVED)
 
     def _get_cache_ttl(self):
         """
@@ -351,3 +325,37 @@ class ArticleCommentResponseCache(ArticleCommentBaseCache):
         :return:
         """
         return constants.CommentRepliesCacheTTL.get_val()
+
+class ArticleCommentCache(ArticleCommentBaseCache):
+    '''
+    文章评论
+    '''
+
+    def _set_key(self):
+        """
+        设置缓存键
+        """
+        return "article:comment:{}".format(self.id_value)
+
+    def _get_total_count(self):
+        """
+        获取总量
+        :return:
+        """
+        count = statistics.ArticleCommentCount.get(self.id_value)
+        return count
+
+    def _db_query_filter(self, query):
+        """
+        数据库查询条件
+        :return:
+        """
+        return query.filter(Comment.article_id==self.id_value,Comment.status==Comment.STATUS.APPROVED,Comment.parent_id==None)
+
+    def _get_cache_ttl(self):
+        """
+        获取缓存有效期
+        :return:
+        """
+        return constants.ArticleCommentsCacheTTL.get_val()
+

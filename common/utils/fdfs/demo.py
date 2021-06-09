@@ -30,4 +30,32 @@ import time
 # # ll = 1391913696153829376
 # # c = ll in l
 # # print(c)
-print(-1==True)
+# class A:
+#     def __init__(self,a):
+#         self.a = a
+#         self.b = self.set()
+#     def set(self):
+#         return 0
+#     def post(self):
+#         print("A_post")
+#     def get(self):
+#         print("A")
+#         self.post()
+# class B(A):
+#     def post(self):
+#         print(self.b)
+#         print("B_post")
+#     def set(self):
+#         return 90
+#
+# class C(A):
+#     def post(self):
+#         print("C_post")
+#     def set(self):
+#         return 20
+#
+# B(10).get()
+import time
+
+print(time.time())
+print(time.time()+2e19)

@@ -164,7 +164,7 @@ def checkout_user_id(value):
                 raise ValueError('Invalid target user id.')
 
 def checkout_article_id(value):
-    print(value,type(value))
+    print("==================>>>",value,type(value))
     try:
         _aid = int(value)
     except Exception:
@@ -179,3 +179,9 @@ def checkout_article_id(value):
                 return _aid
             else:
                 raise ValueError("Invalid article id")
+def checkout_int(value):
+    try:
+        _id = int(value)
+        return _id
+    except :
+        raise  ValueError("type is error")
