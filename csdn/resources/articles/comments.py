@@ -37,24 +37,32 @@ class CommentView(Resource):
         data = RequestParser()
         data.add_argument('type', type=self._comment_type, required=True, location='args')
         #offset为时间戳
-        data.add_argument('source', type=parsers.checkout_int, required=True, location='args')
+        data.add_argument('article_id', type=parsers.checkout_int, required=True, location='args')
         data.add_argument('offset', type=positive, required=False, location='args')
         data.add_argument('limit', type=int_range(constants.DEFAULT_COMMENT_PER_PAGE_MIN,
                                                        constants.DEFAULT_COMMENT_PER_PAGE_MAX,
                                                        argument='limit'), required=False, location='args')
         args = data.parse_args()
+        #文章评论条数
         limit = args.limit if args.limit is not None else constants.DEFAULT_COMMENT_PER_PAGE_MIN
-        if args.type == 'a':
-            #文章评论
-            article_id = args.source
-            total_num , end_id , last_id , page_comments = comments.ArticleCommentCache(article_id).get_page(args.offset,limit)
-        else:
-            #评论的评论
-            comment_id = args.source
-            total_num, end_id, last_id, page_comments = comments.ArticleCommentResponseCache(comment_id).get_page(args.offset,limit)
-        #获取评论相关信息
-        comment_dict = comments.CommentCache.get_list(page_comments)
-        return {"total_num":total_num,"end_id":end_id,'last_id':last_id,'comments':comment_dict},201
+        #当前文章id
+        article_id = args.article_id
+
+        #获取文章评论缓存id
+        total_num , end_id , last_id , page_comments = comments.ArticleCommentCache(article_id).get_page(args.offset,limit)
+        comment_list = comments.CommentCache.get_list(page_comments)
+        for comment in comment_list:
+            total_num, end_id, last_id, page_comments = comments.ArticleCommentResponseCache(int(comment.get('comment_id'))).get_page(
+                args.offset, limit)
+            comments_list = comments.CommentCache.get_list(page_comments)
+            if not page_comments:
+                comment['cComments'] = []
+                continue
+            for c in comments_list:
+                if int(c.get('parent_comment_id')) == int(comment.get('comment_id')):
+                    comment['cComments'] = comments_list
+        total_num = statistics.ArticleCommentCount.get(article_id)
+        return {"total_num":total_num,"end_id":end_id,'last_id':last_id,'comments':comment_list},201
 
     def post(self):
         '''
@@ -81,6 +89,10 @@ class CommentView(Resource):
         if not allow_comment:
             return {'message': 'Article denied comment.'}, 400
         if not comment_parent_id:#评论当前文章
+            # 判断是否评论过
+            f = comments.ArticleCommentCache(article_id).exist()
+            if f:#如果评论过，不能再次评论
+                return {"message": "comment is exist"}, 400
             #获取独一无二的评论id
             comment_id = current_app.id_worker.get_id()
             try:
@@ -100,7 +112,11 @@ class CommentView(Resource):
             #保存评论id缓存
             comments.ArticleCommentCache(article_id).add(comment)
         else:#评论当前文章的评论
-            #判断当前文章的评论在不在
+            #判断是否评论过
+            f = comments.ArticleCommentResponseCache(comment_parent_id).exist()
+            if f:#如果评论过，不能再次评论
+                return {"message": "comment is exist"}, 401
+            # 判断当前文章的评论在不在
             flag = comments.CommentCache(comment_parent_id).exist()
             if not flag:
                 return {'message': 'Invalid target comment id.'}, 400

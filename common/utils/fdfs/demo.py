@@ -56,6 +56,7 @@ import time
 #
 # B(10).get()
 import time
-
-print(time.time())
-print(time.time()+2e19)
+a = 1623220360
+print(round(time.time()))
+print(time.ctime(a))
+# print(time.time()+2e19)

@@ -1,6 +1,6 @@
 import json
 
-from flask import current_app
+from flask import current_app, g
 from redis import RedisError
 from sqlalchemy.orm import load_only
 
@@ -97,13 +97,18 @@ class CommentCache():
                 return False
             else:
                 return True
-    # def user_is_comment(self,user_id):
-    #     '''
-    #     判断用户是否评论过
-    #     :return:
-    #     '''
-    #     res = self.get()
-    #
+    def user_is_comment(self,user_id):
+        '''
+        判断用户是否评论过
+        :return:
+        '''
+        res = self.get()
+        if not res:
+            return False
+        if int(res.get('author_id')) == int(user_id):
+                return True
+        else:
+            return False
 
     def clear(self):
         '''
@@ -127,7 +132,6 @@ class CommentCache():
         comments_dict = {}
         for cid in comment_id:
             comment = CommentCache(cid).get()
-            # print("====-------22288----",comment)
             if comment:#存在，加入返回数据列表
                 comments_dict[cid] = comment
                 return_data.append(comment)
@@ -138,7 +142,6 @@ class CommentCache():
         else:
             res = Comment.query.filter(Comment.id.in_(query_list),Comment.status==Comment.STATUS.APPROVED).all()
             pl = current_app.redis_cluster.pipeline()
-            # print(7777777777777777777777,res)
             for comment in res:
                 comment_dict = {
                     "comment_id": str(comment.id),
@@ -165,7 +168,6 @@ class ArticleCommentBaseCache(object):
     某篇文章评论父类
     '''
     def __init__(self,id_value):
-        print()
         self.id_value = id_value
         self.key = self._set_key()
         self.redis_conn = current_app.redis_cluster
@@ -210,9 +212,9 @@ class ArticleCommentBaseCache(object):
             pl.zrange(self.key,0,0,withscores=True)#返回有序集 key 中，指定区间内的成员。
             # withscores 选项，来让成员和它的 score 值一并返回，返回列表以      value1,score1, ..., valueN,scoreN      的格式表示
             if offset is None:#从头到尾 返回有序集 key 中，指定区间内的成员
-                pl.zrevrange(self.key,0,limit-1,withscores=True)# ZREVRANGE key start stop [WITHSCORES]
+                pl.zrevrange(self.key,0,limit,withscores=True)# ZREVRANGE key start stop [WITHSCORES]
             else:# ZREVRANGEBYSCORE key max min [WITHSCORES] [LIMIT offset count]
-                pl.zrevrangebyscore(self.key,offset-1,0,0,limit-1,withscores=True)
+                pl.zrevrangebyscore(self.key,offset-1,0,0,limit,withscores=True)
             total_num,end_id,res = pl.execute()
         except Exception as e:
             current_app.logger.error(e)
@@ -221,7 +223,6 @@ class ArticleCommentBaseCache(object):
             last_id = None
             res = []
         if total_num > 0:#缓存存在
-            print(res,"-------------------->>>>")
             end_id = int(end_id[0][1])
             # ret -> [(value, score)...] [(comment_id,score)]
             last_id = int(res[-1][1]) if res else None
@@ -290,6 +291,18 @@ class ArticleCommentBaseCache(object):
             self.redis_conn.delete(self.key)
         except RedisError as e:
             current_app.logger.error(e)
+    def exist(self):
+        '''
+        判断评论是否存在
+        :return:
+        '''
+        res = self.get_page(None,statistics.ArticleCommentCount.get(self.id_value))
+        for comment_id in res[3]:
+            f = CommentCache(comment_id).user_is_comment(g.user_id)
+            if f:
+                return True
+        else:
+            return False
 
 class ArticleCommentResponseCache(ArticleCommentBaseCache):
     '''
@@ -315,7 +328,6 @@ class ArticleCommentResponseCache(ArticleCommentBaseCache):
         数据库查询条件
         :return:
         """
-        print("子查询response",query)
         return query.filter(Comment.parent_id == self.id_value,
                             Comment.status == Comment.STATUS.APPROVED)
 
