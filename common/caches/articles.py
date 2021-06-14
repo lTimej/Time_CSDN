@@ -349,6 +349,52 @@ class ArticleLikeCache():
         except RedisError as e:
             current_app.logger.error(e)
 
+class ArticleAttitudeCache():
+    '''
+    当前文章的点赞缓存
+    '''
+    def __init__(self,aid):
+        self.key = "article:{}:like".format(aid)
+        self.aid = aid
+        self.redis_conn = current_app.redis_cluster
+    def get(self):
+        '''
+        获取文章点赞缓存
+        :return:
+        '''
+        try:
+            res = self.redis_conn.get(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
+            res = None
+        if res :
+            return json.loads(res)
+        try:
+            res = Attitude.query.options(load_only(Attitude.user_id)).filter(Attitude.article_id==self.aid,Attitude.attitude==Attitude.ATTITUDE.LIKING).all()
+        except DatabaseError as e:
+            current_app.logger.error(e)
+            raise e
+        user_ids = []
+        for attitude in res:
+            print("----------------->>",attitude.user_id)
+            user_ids.append(attitude.user_id)
+        print("================>",user_ids)
+        try:
+            self.redis_conn.setex(self.key, constants.ArticleUserNoAttitudeCacheTTL.get_val(), json.dumps(user_ids))
+        except RedisError as e:
+            current_app.logger.error(e)
+
+        return user_ids
+
+    def clear(self):
+        """
+        清除
+        :return:
+        """
+        try:
+            self.redis_conn.delete(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
 
 
 

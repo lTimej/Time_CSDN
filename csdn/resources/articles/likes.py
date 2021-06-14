@@ -15,7 +15,10 @@ class ArticleUserLikeCountView(Resource):
     '''
     文章点赞数
     '''
-    method_decorators = [login_required]
+    method_decorators = {
+        'post': [login_required],
+        'delete':[login_required]
+    }
     def post(self):
         '''
         点赞
@@ -63,5 +66,25 @@ class ArticleUserLikeCountView(Resource):
             statistics.UserArticleLikeCount.incr(user_id, -1)
             statistics.ArticleLikeCount.incr(aid, -1)
         return {"message": "success"}, 201
-
+    def get(self):
+        '''
+        获取当前文章点赞人员信息
+        :return:
+        '''
+        #获取文章id
+        data = RequestParser()
+        #文章id校验
+        data.add_argument('aid',type=parsers.checkout_article_id,required=True,location='args')
+        args = data.parse_args()
+        #文章id
+        aid = args.aid
+        user_ids = articles.ArticleAttitudeCache(aid).get()
+        users_info = []
+        for user_id in user_ids:
+            user_info = users.UserProfileCache(user_id).get()
+            users_info.append({
+                'head_photo':user_info.get('head_photo'),
+                'aid':aid
+            })
+        return {'users_info':users_info},201
 

@@ -3,6 +3,7 @@
 # client = Fdfs_client('/home/time/Time_CSDN/Time_CSDN/common/utils/fdfs/client.conf')
 # ret = client.upload_by_filename('./t3.png')
 # print(ret)
+import json
 import time
 # d = {"id":1,"channel_name":"python"}
 # c = {"id":1,"channel_name":"python"}
@@ -54,9 +55,8 @@ import time
 #     def set(self):
 #         return 20
 #
-# B(10).get()
-import time
-a = 1623220360
-print(round(time.time()))
-print(time.ctime(a))
-# print(time.time()+2e19)
+l = [1,2,3,4]
+a = json.dumps(l)
+print(a,type(a))
+b = json.loads(a)
+print(b,type(b))
