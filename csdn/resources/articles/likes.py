@@ -4,7 +4,8 @@ from flask import current_app,g
 from sqlalchemy.orm import load_only
 
 from models import db
-from models.news import Attitude
+from models.news import Attitude, CommentLiking
+from flask_restful.inputs import positive
 
 from utils import parsers
 from utils.decorator import login_required
@@ -43,6 +44,7 @@ class ArticleUserLikeCountView(Resource):
         if res > 0:
             users.UserArticleAttitudeCache(user_id).clear()
             articles.ArticleLikeCache(user_id,aid).clear()
+            articles.ArticleAttitudeCache(aid).clear()
             statistics.UserArticleLikeCount.incr(user_id)
             statistics.ArticleLikeCount.incr(aid)
         return {"aid":aid},201
@@ -63,6 +65,7 @@ class ArticleUserLikeCountView(Resource):
         if res > 0:
             users.UserArticleAttitudeCache(user_id).clear()
             articles.ArticleLikeCache(user_id, aid).clear()
+            articles.ArticleAttitudeCache(aid).clear()
             statistics.UserArticleLikeCount.incr(user_id, -1)
             statistics.ArticleLikeCount.incr(aid, -1)
         return {"message": "success"}, 201
@@ -88,3 +91,58 @@ class ArticleUserLikeCountView(Resource):
             })
         return {'users_info':users_info},201
 
+class CommentUserLikeView(Resource):
+    '''
+    文章评论点赞
+    '''
+    method_decorators = [login_required]
+    def post(self):
+        '''
+        评论点赞
+        :return:
+        '''
+
+        data = RequestParser()
+        data.add_argument('cid',type=positive,required=True,location='json')
+        args = data.parse_args()
+
+        cid = args.cid
+
+        print("/////////////////",cid)
+        user_id = g.user_id
+        ret = 1
+        try:
+            cl = CommentLiking(user_id=user_id,comment_id=cid)
+            db.session.add(cl)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            ret = CommentLiking.query.filter_by(user_id=g.user_id, comment_id=cid, is_deleted=True) \
+                .update({'is_deleted': False})
+            db.session.commit()
+        if ret > 0:
+            statistics.ArticleCommentLikeCount.incr(cid,1)
+            articles.CommentAttitudeCache(cid).clear()
+        return {"cid":cid},201
+    def delete(self):
+
+        data = RequestParser()
+        data.add_argument('cid', type=positive, required=True, location='json')
+        args = data.parse_args()
+
+        cid = args.cid
+        print("--------cid--------->",cid,type(cid))
+        user_id = g.user_id
+        ret = 1
+        try:
+            ret = CommentLiking.query.filter(CommentLiking.user_id==user_id,CommentLiking.comment_id==int(cid),CommentLiking.is_deleted==False).update({"is_deleted":True})
+            db.session.commit()
+        except:
+            db.session.rollback()
+            return {"message":"comment is failed!"},401
+        if ret > 0:
+            statistics.ArticleCommentLikeCount.incr(cid,-1)
+            articles.CommentAttitudeCache(cid).clear()
+        else:
+            articles.CommentAttitudeCache(cid).clear()
+        return {"cid":cid},201

@@ -29,5 +29,7 @@ article_api.add_resource(likes.ArticleUserLikeCountView,'/v1/article/likes',endp
 article_api.add_resource(reads.ArticleReadingView,'/v1/article/reads',endpoint='reads')
 #文章评论
 article_api.add_resource(comments.CommentView,'/v1/article/comment',endpoint='comment')
+#评论点赞
+article_api.add_resource(likes.CommentUserLikeView,'/v1/comment/like',endpoint='commentLike')
 
 

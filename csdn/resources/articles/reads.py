@@ -34,4 +34,5 @@ class ArticleReadingView(Resource):
                     return {"message": "data is exist"}, 401
                 users.UserArticleReadCache(user_id).clear()
                 statistics.ArticleReadCount.incr(aid, 1)
-        return {"message":"OK"},201
+        print("(((======12====)))",aid)
+        return {"message":"OK","aid":aid},201

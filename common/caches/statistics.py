@@ -219,3 +219,5 @@ class UserCollectionCount(CountStorageBase):
         ret = db.session.query(Collection.user_id, func.count(Collection.article_id)) \
             .filter(Collection.is_deleted == 0).group_by(Collection.user_id).all()
         return ret
+# class CommentLikeCount(CountStorageBase):
+#     key = "comment:like:couint"

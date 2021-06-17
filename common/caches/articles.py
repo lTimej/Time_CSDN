@@ -10,7 +10,7 @@ from caches import statistics as article_statistics
 from caches import users as user_cache
 
 from caches import constants
-from models.news import Article,ArticleContent,Attitude
+from models.news import Article,ArticleContent,Attitude,CommentLiking
 '''
 文章缓存
 '''
@@ -395,6 +395,53 @@ class ArticleAttitudeCache():
             self.redis_conn.delete(self.key)
         except RedisError as e:
             current_app.logger.error(e)
+
+class CommentAttitudeCache():
+    '''
+    评论点赞
+    '''
+    def __init__(self,comment_id):
+        self.key = "comment:{}:user_id"
+        self.comment_id = comment_id
+        self.redis_conn = current_app.redis_master
+    def get(self):
+        '''
+        获取
+        :return:
+        '''
+        try:
+            res = self.redis_conn.get(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
+            res = None
+        if res:
+            return json.loads(res)
+        try:
+            cls = CommentLiking.query.options(load_only(CommentLiking.user_id)).filter(CommentLiking.comment_id==self.comment_id,CommentLiking.is_deleted==False).all()
+        except Exception as e:
+            current_app.logger.error(e)
+            cls = None
+        if not cls:
+            return []
+        commentLikes = []
+        for cl in cls:
+            commentLikes.append(cl.user_id)
+        try:
+            self.redis_conn.setex(self.key,constants.CommentsLikingCacheTTL.get_val(),json.dumps(commentLikes))
+        except RedisError as e:
+            current_app.logger.error(e)
+        return commentLikes
+    def exist(self,user_id):
+        self.clear()
+        uids = self.get()
+        return user_id in uids
+    def clear(self):
+        try:
+            self.redis_conn.delete(self.key)
+        except RedisError as e:
+            current_app.logger.error(e)
+
+
 
 
 

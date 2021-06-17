@@ -34,6 +34,8 @@ class CommentView(Resource):
         '''
         :return:
         '''
+        user_id = g.user_id
+        print("[======user_id==========]",user_id)
         data = RequestParser()
         data.add_argument('type', type=self._comment_type, required=True, location='args')
         #offset为时间戳
@@ -52,14 +54,20 @@ class CommentView(Resource):
         total_num , end_id , last_id , page_comments = comments.ArticleCommentCache(article_id).get_page(args.offset,limit)
         comment_list = comments.CommentCache.get_list(page_comments)
         for comment in comment_list:
+            flag = articles.CommentAttitudeCache(int(comment.get('comment_id'))).exist(user_id)
+            comment['comment_is_like'] = flag
             total_num, end_id, last_id, page_comments = comments.ArticleCommentResponseCache(int(comment.get('comment_id'))).get_page(
                 args.offset, limit)
             comments_list = comments.CommentCache.get_list(page_comments)
+
             if not page_comments:
                 comment['cComments'] = []
                 continue
             for c in comments_list:
                 if int(c.get('parent_comment_id')) == int(comment.get('comment_id')):
+                    flag = articles.CommentAttitudeCache(int(c.get('comment_id'))).exist(user_id)
+                    print("-------flag----",flag)
+                    c['comment_is_like'] = flag
                     comment['cComments'] = comments_list
         total_num = statistics.ArticleCommentCount.get(article_id)
         return {"total_num":total_num,"end_id":end_id,'last_id':last_id,'comments':comment_list},201

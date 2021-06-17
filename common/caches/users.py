@@ -241,6 +241,7 @@ class UserProfileCache():
             user_dict['head_photo'] = constants.DEFAULT_USER_PROFILE_PHOTO
         #头像添加完整地址信息
         user_dict['head_photo'] = current_app.config['FDFS_DOMAIN'] + user_dict.get('head_photo')
+        user_dict['user_id'] = self.user_id
         return user_dict
 
     def add_fields(self,user_dict):

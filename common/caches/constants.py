@@ -262,3 +262,9 @@ class UserArticleReadNotExistsCacheTTL(BaseCacheTTL):
     """
     TTL = 5 * 60
     MAX_DELTA = 60
+
+class CommentsLikingCacheTTL(BaseCacheTTL):
+    """
+    文章评论列表缓存时间，秒
+    """
+    TTL = 30 * 60

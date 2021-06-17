@@ -55,8 +55,9 @@ import time
 #     def set(self):
 #         return 20
 #
-l = [1,2,3,4]
-a = json.dumps(l)
-print(a,type(a))
-b = json.loads(a)
-print(b,type(b))
+def outer(func):
+    def wrapper(a):
+        print("前")
+        func()
+        print("后")
+    return wrapper
