@@ -1,4 +1,6 @@
 from flask import Flask
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.executors.pool import ThreadPoolExecutor
 
 def _create_app(config,enable_config_file=False):
     '''
@@ -65,5 +67,20 @@ def create_app(config,enable_config_file=False):
     #fdfs
     from fdfs_client.client import Fdfs_client
     app.fdfs_client = Fdfs_client('/home/time/Time_CSDN/Time_CSDN/common/utils/fdfs/client.conf')
+
+    #定时任务
+    executors = {
+        'default': ThreadPoolExecutor(10)
+    }
+
+    app.scheduler = BackgroundScheduler(executors=executors)
+
+    # 添加"静态的"定时任务
+    from .schedule.statistic import fix_statistics
+    # app.scheduler.add_job(fix_statistics, 'date', args=[app])
+    app.scheduler.add_job(fix_statistics, 'cron', hour=3, args=[app])
+
+    # 启动定时任务调度器
+    app.scheduler.start()
 
     return app

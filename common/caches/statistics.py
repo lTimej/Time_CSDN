@@ -36,6 +36,7 @@ class CountStorageBase(object):
             return 0
         else:
             return int(count)
+
     @classmethod
     def incr(cls,user_id,incr_num=1):
         '''
@@ -50,7 +51,7 @@ class CountStorageBase(object):
             raise e#增加出错，主动抛出异常给调用者
 
     @classmethod
-    def reset(cls,user_id,db_query_res):
+    def reset(cls,db_query_res):
         '''
         重新刷新缓存，一般每天凌晨3点旧更新一次缓存
 
@@ -71,20 +72,12 @@ class CountStorageBase(object):
 
 class UserArticleCount(CountStorageBase):
     '''
-    用户关注数
-    关注表 Relation:
-    一个用户可以右多个关注对象，采用分组聚合查询
+    用户文章数
     '''
     key = "user:article:count"
     #直接类名调用
     @staticmethod
     def db_query():
-        '''
-        返回所有用户的关注数量
-        user_id:count
-        :return:
-        '''
-        #查询每个用户关注的人数，过滤出是关注模式，通过用户id来分组
         return db.session.query(Article.user_id, func.count(Article.id)) \
             .filter(Article.status == Article.STATUS.APPROVED) \
             .group_by(Article.user_id).all()
