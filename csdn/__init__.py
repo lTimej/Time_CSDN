@@ -68,11 +68,12 @@ def create_app(config,enable_config_file=False):
     from fdfs_client.client import Fdfs_client
     app.fdfs_client = Fdfs_client('/home/time/Time_CSDN/Time_CSDN/common/utils/fdfs/client.conf')
 
-    #定时任务
-    executors = {
+    #在定时任务该执行时，以进程或线程方式执行任务
+    executors = {#10个线程
         'default': ThreadPoolExecutor(10)
     }
-
+    #负责管理定时任务
+    #  BackgroundScheduler 在框架程序（如Django、Flask）中使用
     app.scheduler = BackgroundScheduler(executors=executors)
 
     # 添加"静态的"定时任务
