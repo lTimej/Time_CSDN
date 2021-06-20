@@ -13,7 +13,7 @@ class DefaultConfig():
     DEFAULT_TX = 'group1/M00/00/00/wKiZgmCOpa6AbvCXAAEwN58xN6E181.png'
     FDFS_DOMAIN = 'http://192.168.153.132:8888/'
 
-
+    #错误页面
     ERROR_404_HELP = False
 
     # 日志
@@ -51,12 +51,18 @@ class DefaultConfig():
     RATELIMIT_STORAGE_URL = 'redis+sentinel://127.0.0.1:26380,127.0.0.1:26381,127.0.0.1:26382/mymaster'
     RATELIMIT_STRATEGY = 'moving-window'
 
+    #消息队列
     RABBITMQ = 'amqp://time:liujun@localhost:5672/csdn'
 
     # Snowflake ID Worker 参数
     DATACENTER_ID = 0
     WORKER_ID = 0
     SEQUENCE = 0
+    class RPC:
+        RECOMMEND = '127.0.0.1:8889'
+        # CHATBOT = '172.17.0.59:9999'
+    #rpc远程调用
+
 
 
 

@@ -1,3 +1,4 @@
+import grpc
 from flask import Flask
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
@@ -83,5 +84,9 @@ def create_app(config,enable_config_file=False):
 
     # 启动定时任务调度器
     app.scheduler.start()
+
+    #rpc远程调用
+    app.rpc_reco_channel = grpc.insecure_channel(app.config['RPC'].RECOMMEND)
+    app.rpc_reco = app.rpc_reco_channel
 
     return app
