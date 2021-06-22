@@ -96,6 +96,20 @@ class UserFocus(Resource):
             UserFansCache(target_id).update(user_id,timestamp)
             UserFocusCount.incr(user_id)
             UserFansCount.incr(target_id)
+
+        #发送消息通知
+        '''
+        user_id  user_name head_photo timestamp
+        '''
+        user = UserProfileCache(user_id).get()
+        data = {
+            "user_id":user_id,
+            "user_name":user.get('user_name'),
+            "head_photo":user.get("head_photo"),
+            "time_stamp":int(time.time())
+        }
+        current_app.sio_manager.emit('focus',data,room=target_id)
+
         return {"target_id":str(target_id)},201
     def delete(self):
         '''

@@ -6,7 +6,7 @@ import socketio
 
 # rabbitmq地址
 RABBITMQ = 'amqp://time:liujun@localhost:5672/csdn'
-JWT_SECRET = 'TPmi4aLWRbyVq8zu9v82dWYW17/z+UvRnYTt4P6fAXA'
+JWT_SECRET = 'akldj2378/\edws09qeikl90\/'
 
 # 创建读取rabbitmq消息队列的管理对象
 mgr = socketio.KombuManager(RABBITMQ)

@@ -18,6 +18,6 @@ if len(sys.argv) < 2:
     exit(1)  # 表示程序异常退出
 port = int(sys.argv[1])
 
-import chat
+import chat,notify
 
 eventlet.wsgi.server(eventlet.listen(('', port)), app)

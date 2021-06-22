@@ -1,4 +1,5 @@
 import grpc
+import socketio
 from flask import Flask
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
@@ -55,6 +56,9 @@ def create_app(config,enable_config_file=False):
     #文章类注册
     from .resources.articles import  article_bp
     app.register_blueprint(article_bp)
+    #搜索类注册
+    from .resources.search import bp_search
+    app.register_blueprint(bp_search)
 
     #雪花算法生成user_id
     from utils.snowflake.id_worker import IdWorker
@@ -88,5 +92,8 @@ def create_app(config,enable_config_file=False):
     #rpc远程调用
     app.rpc_reco_channel = grpc.insecure_channel(app.config['RPC'].RECOMMEND)
     app.rpc_reco = app.rpc_reco_channel
+    
+    #消息推送通知
+    app.sio_manager = socketio.KombuManager(app.config['RABBITMQ'],write_only=True)
 
     return app

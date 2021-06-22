@@ -778,6 +778,13 @@ class UserArticleReadCache():
         else:
             return True
 
+class UserSearchCache():
+    '''
+    用户搜索历史
+    '''
+
+
+
 
 
 
