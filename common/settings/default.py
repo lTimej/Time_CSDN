@@ -58,10 +58,14 @@ class DefaultConfig():
     DATACENTER_ID = 0
     WORKER_ID = 0
     SEQUENCE = 0
+
+    # rpc远程调用
     class RPC:
         RECOMMEND = '127.0.0.1:8889'
         # CHATBOT = '172.17.0.59:9999'
-    #rpc远程调用
+
+    #elasticsearch
+    ES = ["127.0.0.1:9200"]
 
 
 

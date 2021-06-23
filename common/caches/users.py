@@ -1,4 +1,4 @@
-import json
+import json,time
 
 from flask import current_app
 
@@ -782,6 +782,42 @@ class UserSearchCache():
     '''
     用户搜索历史
     '''
+    def __init__(self,user_id):
+        self.key = "user:{}:search:history".format(user_id)
+        self.user_id = user_id
+
+    def save(self,keyword):
+        '''
+        保存历史记录
+        :return:
+        '''
+        try:
+            pl = current_app.redis_master.pipeline()
+            pl.zadd(self.key,time.time(),keyword)
+            pl.zremrangebyrank(self.key,0,-1*(constants.SEARCHING_HISTORY_COUNT_PER_USER+1))
+            pl.execute()
+        except RedisError as e:
+            current_app.logger.error(e)
+    def get(self):
+        '''
+        获取历史记录
+        :return:
+        '''
+        try:
+            res = current_app.redis_master.zrevrange(self.key,0,-1)
+        except ConnectionError as e:
+            current_app.logger.error(e)
+            res = current_app.redis_slave.zrevrange(self.key,0,-1)
+        keywords = [keyword.decode() for keyword in res]
+
+        return keywords
+
+    def clear(self):
+        """
+        清除
+        """
+        current_app.redis_master.delete(self.key)
+
 
 
 

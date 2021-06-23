@@ -1,5 +1,6 @@
 import grpc
 import socketio
+from elasticsearch import Elasticsearch
 from flask import Flask
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
@@ -95,5 +96,16 @@ def create_app(config,enable_config_file=False):
     
     #消息推送通知
     app.sio_manager = socketio.KombuManager(app.config['RABBITMQ'],write_only=True)
+
+    #elasticsearch
+    app.es = Elasticsearch(
+        app.config['ES'],
+        # sniff before doing anything
+        sniff_on_start=True,
+        # refresh nodes after a node fails to respond
+        sniff_on_connection_fail=True,
+        # and also every 60 seconds
+        sniffer_timeout=60
+    )
 
     return app
