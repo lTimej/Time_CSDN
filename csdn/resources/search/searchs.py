@@ -11,7 +11,7 @@ class AllSearchView(Resource):
     '''
     def get(self):
         '''
-
+        获取搜索文章
         :return:
         '''
         #获取参数
